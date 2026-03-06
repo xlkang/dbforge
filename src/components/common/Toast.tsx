@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 
 interface ToastProps {
   message: string;
@@ -7,7 +7,7 @@ interface ToastProps {
   duration?: number;
 }
 
-export const Toast: React.FC<ToastProps> = ({ 
+export const Toast: React.FC<ToastProps> = memo(({ 
   message, 
   type = 'error', 
   onClose, 
@@ -47,7 +47,7 @@ export const Toast: React.FC<ToastProps> = ({
       </button>
     </div>
   );
-};
+});
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 interface SkeletonProps {
   width?: string | number;
@@ -7,7 +7,7 @@ interface SkeletonProps {
   className?: string;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ 
+export const Skeleton: React.FC<SkeletonProps> = memo(({ 
   width = '100%', 
   height = '20px', 
   borderRadius = '4px',
@@ -23,9 +23,9 @@ export const Skeleton: React.FC<SkeletonProps> = ({
       }}
     />
   );
-};
+});
 
-export const TableSkeleton: React.FC<{ rows?: number }> = ({ rows = 5 }) => {
+export const TableSkeleton: React.FC<{ rows?: number }> = memo(({ rows = 5 }) => {
   return (
     <div className="w-full">
       <div className="flex gap-2 mb-4">
@@ -53,9 +53,9 @@ export const TableSkeleton: React.FC<{ rows?: number }> = ({ rows = 5 }) => {
       </div>
     </div>
   );
-};
+});
 
-export const SchemaSkeleton: React.FC = () => {
+export const SchemaSkeleton: React.FC = memo(() => {
   return (
     <div className="space-y-3 p-2">
       {Array.from({ length: 6 }).map((_, i) => (
@@ -66,9 +66,9 @@ export const SchemaSkeleton: React.FC = () => {
       ))}
     </div>
   );
-};
+});
 
-export const QueryResultSkeleton: React.FC = () => {
+export const QueryResultSkeleton: React.FC = memo(() => {
   return (
     <div className="space-y-2">
       <div className="flex gap-1">
@@ -85,4 +85,4 @@ export const QueryResultSkeleton: React.FC = () => {
       ))}
     </div>
   );
-};
+});

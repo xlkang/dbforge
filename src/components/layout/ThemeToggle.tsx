@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
 type Theme = 'dark' | 'light';
 
-export function ThemeToggle() {
+export const ThemeToggle = memo(function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
@@ -14,17 +14,17 @@ export function ThemeToggle() {
     }
   }, []);
 
-  const applyTheme = (t: Theme) => {
+  const applyTheme = useCallback((t: Theme) => {
     document.documentElement.classList.remove('dark', 'light');
     document.documentElement.classList.add(t);
-  };
+  }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('dbforge-theme', newTheme);
     applyTheme(newTheme);
-  };
+  }, [theme, applyTheme]);
 
   return (
     <button
@@ -39,4 +39,4 @@ export function ThemeToggle() {
       )}
     </button>
   );
-}
+});
