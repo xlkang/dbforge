@@ -1,0 +1,146 @@
+import { useState } from 'react';
+import { 
+  Database, FileText, Play, Download, Upload, 
+  RefreshCw, Settings, Sun, Moon, Table2, FolderOpen, Layers
+} from 'lucide-react';
+import { useDatabaseStore } from '../../stores/databaseStore';
+
+interface ToolbarProps {
+  onNewQuery?: () => void;
+  onNewTable?: () => void;
+}
+
+export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
+  const { connection, executeQuery, loadTables } = useDatabaseStore();
+  const [executing, setExecuting] = useState(false);
+
+  const handleExecute = async () => {
+    const query = useDatabaseStore.getState().query;
+    if (!query.trim()) return;
+    setExecuting(true);
+    try {
+      await executeQuery(query);
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const refreshTables = async () => {
+    await loadTables();
+  };
+
+  return (
+    <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center px-2 gap-1 shrink-0">
+      {/* Connection */}
+      <div className="flex items-center gap-1 px-2 border-r border-gray-700 mr-2">
+        <Database size={14} className="text-blue-400" />
+        <span className="text-xs text-gray-400">
+          {connection ? connection.name : '未连接'}
+        </span>
+      </div>
+
+      {/* File Operations */}
+      <ToolbarButton icon={FolderOpen} label="打开" title="打开数据库文件" />
+      <ToolbarButton icon={Table2} label="新建表" title="创建新表" onClick={onNewTable} />
+      <ToolbarButton icon={FileText} label="新建查询" title="新建查询窗口" onClick={onNewQuery} />
+      
+      <div className="w-px h-5 bg-gray-700 mx-1" />
+
+      {/* Execute */}
+      <ToolbarButton 
+        icon={Play} 
+        label="执行" 
+        title="执行查询 (Ctrl+Enter)"
+        onClick={handleExecute}
+        variant="primary"
+        loading={executing}
+      />
+      
+      <div className="w-px h-5 bg-gray-700 mx-1" />
+
+      {/* Data Operations */}
+      <ToolbarButton icon={Download} label="导出" title="导出数据" />
+      <ToolbarButton icon={Upload} label="导入" title="导入数据" />
+      
+      <div className="w-px h-5 bg-gray-700 mx-1" />
+
+      {/* Refresh */}
+      <ToolbarButton 
+        icon={RefreshCw} 
+        label="刷新" 
+        title="刷新表列表" 
+        onClick={refreshTables}
+      />
+
+      <div className="flex-1" />
+
+      {/* Right Side */}
+      <ToolbarButton icon={Layers} label="ER图" title="查看ER图" />
+      <ToolbarButton icon={Settings} label="设置" title="设置" />
+      <ThemeToggleButton />
+    </div>
+  );
+}
+
+interface ToolbarButtonProps {
+  icon: React.ElementType;
+  label?: string;
+  title?: string;
+  onClick?: () => void;
+  variant?: 'default' | 'primary';
+  loading?: boolean;
+}
+
+function ToolbarButton({ icon: Icon, label, title, onClick, variant = 'default', loading }: ToolbarButtonProps) {
+  const baseClass = variant === 'primary' 
+    ? 'bg-blue-600 hover:bg-blue-500 text-white' 
+    : 'hover:bg-gray-700 text-gray-300';
+  
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      disabled={loading}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${baseClass} disabled:opacity-50`}
+    >
+      {loading ? (
+        <RefreshCw size={14} className="animate-spin" />
+      ) : (
+        <Icon size={14} />
+      )}
+      {label && <span>{label}</span>}
+    </button>
+  );
+}
+
+function ThemeToggleButton() {
+  const [dark, setDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return true;
+  });
+
+  const toggle = () => {
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) {
+      html.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setDark(false);
+    } else {
+      html.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setDark(true);
+    }
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      title={dark ? '切换到浅色模式' : '切换到深色模式'}
+      className="p-1.5 rounded hover:bg-gray-700 text-gray-400"
+    >
+      {dark ? <Sun size={14} /> : <Moon size={14} />}
+    </button>
+  );
+}

@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
-const PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 200, 500];
 
 interface DataViewerProps {
   tableName?: string;
@@ -13,6 +14,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
   const displayTable = tableName || storeTableName;
   const { queryResult, queryError, clearResult } = useDatabaseStore();
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filterText, setFilterText] = useState('');
@@ -168,9 +170,14 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
   // Use sorted/filtered rows for display
   const displayRows = sortColumn || filterText || quickFilter ? sortedRows : rows;
-  const totalPages = Math.ceil(displayRows.length / PAGE_SIZE);
-  const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const paginatedRows = displayRows.slice(startIndex, startIndex + PAGE_SIZE);
+  // Reset to page 1 when query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [queryResult]);
+
+  const totalPages = Math.ceil(displayRows.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedRows = displayRows.slice(startIndex, startIndex + pageSize);
 
   // Highlight matching text
   const highlightText = (text: string) => {
@@ -389,16 +396,36 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-4 py-3 border-t border-gray-800 flex items-center justify-between bg-gray-900/80 shrink-0">
-          <div className="text-xs text-gray-500">
-            显示 {(startIndex + 1).toLocaleString()}-{Math.min(startIndex + PAGE_SIZE, displayRows.length).toLocaleString()} 条，
-            共 {displayRows.length.toLocaleString()} 条
+        <div className="px-4 py-2 border-t border-gray-800 flex items-center justify-between bg-gray-900/80 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-gray-500">
+              <span className="text-gray-400">{displayRows.length.toLocaleString()}</span> 条记录
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500">每页</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded border border-gray-700 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <span className="text-xs text-gray-500">条</span>
+            </div>
           </div>
           <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-600 mr-2">
+              {startIndex + 1}-{Math.min(startIndex + pageSize, displayRows.length)}
+            </span>
             <button
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              className="p-1 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300"
               title="首页"
             >
               <ChevronsLeft className="w-4 h-4" />
@@ -406,7 +433,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              className="p-1 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300"
               title="上一页"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -417,7 +444,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              className="p-1 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300"
               title="下一页"
             >
               <ChevronRight className="w-4 h-4" />
@@ -425,7 +452,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
             <button
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              className="p-1 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300"
               title="末页"
             >
               <ChevronsRight className="w-4 h-4" />

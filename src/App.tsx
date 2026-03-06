@@ -16,6 +16,7 @@ import { TabBar } from './components/tabs/TabBar';
 import { TabContent } from './components/tabs/TabContent';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ErrorBoundary } from './components/common/Toast';
+import { Toolbar } from './components/layout/Toolbar';
 
 function App() {
   const connection = useDatabaseStore((s) => s.connection);
@@ -61,6 +62,9 @@ function App() {
             <ThemeToggle />
           </div>
         </header>
+
+        {/* Toolbar */}
+        {connection && <Toolbar />}
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
