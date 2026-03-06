@@ -1,10 +1,12 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
-import { Database, Server, Upload, X, Trash2, Edit3, Plus, FileText, FolderOpen, Wifi } from 'lucide-react';
+import { useRef, useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import { Database, Server, Upload, X, Trash2, Edit3, Plus, FileText, FolderOpen, Wifi, Loader2 } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useConnectionStore } from '../../stores/connectionStore';
 import { MySQLConnect } from '../connect/MySQLConnect';
-import { ConnectionModal } from './ConnectionModal';
 import type { MySQLConnection } from '../../stores/connectionStore';
+
+// Lazy load modals for better bundle size
+const ConnectionModal = lazy(() => import('./ConnectionModal').then(m => ({ default: m.ConnectionModal })));
 
 type ConnectMode = 'sqlite' | 'mysql';
 
@@ -305,14 +307,16 @@ export function DatabasePanel() {
       )}
       
       {/* 连接编辑弹窗 */}
-      <ConnectionModal
-        isOpen={showConnectionModal}
-        onClose={() => {
-          setShowConnectionModal(false);
-          setEditingConnection(undefined);
-        }}
-        editConnection={editingConnection}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" /></div>}>
+        <ConnectionModal
+          isOpen={showConnectionModal}
+          onClose={() => {
+            setShowConnectionModal(false);
+            setEditingConnection(undefined);
+          }}
+          editConnection={editingConnection}
+        />
+      </Suspense>
     </div>
   );
 }

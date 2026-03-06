@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useDatabaseStore } from '../../stores/databaseStore';
-import { ImportCSVModal } from '../data/ImportCSVModal';
-import { ExportModal } from './ExportModal';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load modals
+const ExportModal = lazy(() => import('./ExportModal').then(m => ({ default: m.ExportModal })));
+const ImportCSVModal = lazy(() => import('../data/ImportCSVModal').then(m => ({ default: m.ImportCSVModal })));
 
 type ExportFormat = 'csv' | 'json';
 
@@ -80,7 +83,9 @@ export function ExportPanel() {
           JSON
         </button>
       </div>
-      <ImportCSVModal />
+      <Suspense fallback={<div className="p-2"><Loader2 className="w-4 h-4 animate-spin" /></div>}>
+        <ImportCSVModal />
+      </Suspense>
       
       {/* Database Export */}
       {connection && tables.length > 0 && (
@@ -92,7 +97,9 @@ export function ExportPanel() {
             导出数据库
           </button>
           {showExportModal && (
-            <ExportModal onClose={() => setShowExportModal(false)} />
+            <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" /></div>}>
+              <ExportModal onClose={() => setShowExportModal(false)} />
+            </Suspense>
           )}
         </>
       )}

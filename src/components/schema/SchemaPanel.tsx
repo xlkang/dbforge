@@ -1,13 +1,15 @@
-import { useState, useMemo } from 'react';
-import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, GripVertical, Search, X } from 'lucide-react';
+import { useState, useMemo, lazy, Suspense } from 'react';
+import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, GripVertical, Search, X, Loader2 } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useToastStore } from '../../stores/toastStore';
 import { useContextMenu, type MenuItem } from '../common/ContextMenu';
-import { CreateTableModal } from './CreateTableModal';
-import { IndexModal } from './IndexModal';
-import { AlterTableModal } from './AlterTableModal';
 import { SchemaSkeleton } from '../common/Skeleton';
+
+// Lazy load modals for better bundle size
+const CreateTableModal = lazy(() => import('./CreateTableModal').then(m => ({ default: m.CreateTableModal })));
+const IndexModal = lazy(() => import('./IndexModal').then(m => ({ default: m.IndexModal })));
+const AlterTableModal = lazy(() => import('./AlterTableModal').then(m => ({ default: m.AlterTableModal })));
 
 export function SchemaPanel() {
   const { 
@@ -216,7 +218,9 @@ export function SchemaPanel() {
             >
               <Network className="w-4 h-4" strokeWidth={2} />
             </button>
-            <CreateTableModal />
+            <Suspense fallback={<div className="p-1.5"><Loader2 className="w-4 h-4 animate-spin" /></div>}>
+              <CreateTableModal />
+            </Suspense>
           </div>
         </div>
         {/* Search */}
@@ -386,10 +390,14 @@ export function SchemaPanel() {
       </div>
 
       {showIndexModal && selectedTable && (
-        <IndexModal tableName={selectedTable} onClose={() => setShowIndexModal(false)} />
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" /></div>}>
+          <IndexModal tableName={selectedTable} onClose={() => setShowIndexModal(false)} />
+        </Suspense>
       )}
       {showAlterTableModal && selectedTable && (
-        <AlterTableModal tableName={selectedTable} onClose={() => setShowAlterTableModal(false)} isOpen={showAlterTableModal} />
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" /></div>}>
+          <AlterTableModal tableName={selectedTable} onClose={() => setShowAlterTableModal(false)} isOpen={showAlterTableModal} />
+        </Suspense>
       )}
 
       {contextMenu && (

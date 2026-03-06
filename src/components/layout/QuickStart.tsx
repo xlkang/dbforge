@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Database, Server, Upload, FileText, Search, Download, Edit3, Code, ArrowRight, Sparkles } from 'lucide-react';
-import { ConnectionModal } from '../connection/ConnectionModal';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { Database, Server, Upload, FileText, Search, Download, Edit3, Code, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
+
+// Lazy load ConnectionModal
+const ConnectionModal = lazy(() => import('../connection/ConnectionModal').then(m => ({ default: m.ConnectionModal })));
 
 interface QuickStartProps {
   onFileSelect?: (file: File) => void;
@@ -152,7 +154,9 @@ export function QuickStart({ onFileSelect }: QuickStartProps) {
 
             {/* MySQL Modal */}
             {showMySQLModal && (
-              <ConnectionModal isOpen={showMySQLModal} onClose={() => setShowMySQLModal(false)} />
+              <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" /></div>}>
+                <ConnectionModal isOpen={showMySQLModal} onClose={() => setShowMySQLModal(false)} />
+              </Suspense>
             )}
           </>
         )}
