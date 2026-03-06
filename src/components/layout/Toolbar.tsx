@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Database, FileText, Play, Download, Upload, 
-  RefreshCw, Settings, Sun, Moon, Table2, FolderOpen, Layers, BarChart3
+  RefreshCw, Settings, Sun, Moon, Table2, FolderOpen, Layers, BarChart3, HardDrive
 } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
@@ -9,9 +9,10 @@ import { useTabStore } from '../../stores/tabStore';
 interface ToolbarProps {
   onNewQuery?: () => void;
   onNewTable?: () => void;
+  onBackup?: () => void;
 }
 
-export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
+export function Toolbar({ onNewQuery, onNewTable, onBackup }: ToolbarProps) {
   const { connection, executeQuery, loadTables, queryResult } = useDatabaseStore();
   const { addTab } = useTabStore();
   const [executing, setExecuting] = useState(false);
@@ -83,6 +84,7 @@ export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
         title="刷新表列表" 
         onClick={refreshTables}
       />
+      <ToolbarButton icon={HardDrive} label="备份" title="备份/还原数据库" onClick={onBackup} />
 
       <div className="flex-1" />
 

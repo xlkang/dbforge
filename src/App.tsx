@@ -18,12 +18,14 @@ import { TabContent } from './components/tabs/TabContent';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Toolbar } from './components/layout/Toolbar';
+import { DatabaseBackup } from './components/export/DatabaseBackup';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { GlobalSearch } from './components/layout/GlobalSearch';
 import { ConnectionStatus } from './components/layout/ConnectionStatus';
 
 function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
   const connection = useDatabaseStore((s) => s.connection);
   const loadTables = useDatabaseStore((s) => s.loadTables);
   const connectionType = connection?.type;
@@ -126,7 +128,7 @@ function App() {
         </header>
 
         {/* Toolbar */}
-        {connection && <Toolbar />}
+        {connection && <Toolbar onBackup={() => setShowBackup(true)} />}
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
@@ -187,6 +189,8 @@ function App() {
         />
         
         {/* Global Search */}
+        {/* Backup Modal */}
+        {showBackup && <DatabaseBackup onClose={() => setShowBackup(false)} />}
         <GlobalSearch />
       </div>
     </ErrorBoundary>

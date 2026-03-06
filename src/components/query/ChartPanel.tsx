@@ -12,16 +12,19 @@ const COLORS = ['#00a8e8', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c'
 
 interface ChartPanelProps {
   onClose?: () => void;
+  columns?: string[];
+  rows?: Record<string, unknown>[];
 }
 
-export function ChartPanel({ onClose }: ChartPanelProps) {
+export function ChartPanel({ onClose, columns: propColumns, rows: propRows }: ChartPanelProps) {
   const { queryResult } = useDatabaseStore();
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [xAxis, setXAxis] = useState<string>('');
   const [yAxis, setYAxis] = useState<string>('');
 
-  // 获取可用的列
-  const columns = queryResult?.columns || [];
+  // Use props if provided, otherwise fall back to store
+  const columns = propColumns || queryResult?.columns || [];
+  const dataRows = propRows || queryResult?.rows || [];
   
   // 自动选择 x 和 y 轴
   useMemo(() => {
@@ -31,7 +34,7 @@ export function ChartPanel({ onClose }: ChartPanelProps) {
     if (columns.length > 1 && !yAxis) {
       // 尝试选择一个数值列
       const numericCol = columns.find(col => 
-        queryResult?.rows?.some((row: any) => typeof row[col] === 'number')
+        dataRows?.some((row: any) => typeof row[col] === 'number')
       );
       setYAxis(numericCol || columns[1]);
     }
@@ -41,7 +44,7 @@ export function ChartPanel({ onClose }: ChartPanelProps) {
   const chartData = useMemo(() => {
     if (!queryResult?.rows?.length || !xAxis) return [];
     
-    return queryResult.rows.slice(0, 100).map((row: any) => ({
+    return dataRows.slice(0, 100).map((row: any) => ({
       name: row[xAxis]?.toString() || 'Unknown',
       value: yAxis ? Number(row[yAxis]) || 0 : 1,
       ...Object.fromEntries(

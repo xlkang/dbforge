@@ -386,6 +386,89 @@ app.post('/api/export', async (req, res) => {
   }
 });
 
+// Backup API - Export SQLite database
+app.post('/api/backup', async (req, res) => {
+  try {
+    const { path, tables } = req.body;
+    
+    if (!path) {
+      return res.status(400).json({ success: false, message: 'No database path provided' });
+    }
+
+    const Database = require('better-sqlite3');
+    const db = new Database(path, { readonly: true });
+    
+    // If specific tables selected, backup only those
+    let tableList = tables;
+    if (!tableList || tableList.length === 0) {
+      tableList = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all().map((t: any) => t.name);
+    }
+
+    // Create in-memory database for backup
+    const backupDb = new Database(':memory:');
+    
+    // Copy schema and data for selected tables
+    for (const tableName of tableList) {
+      // Get create statement
+      const createStmt = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name = ?`).get(tableName);
+      if (createStmt?.sql) {
+        backupDb.exec(createStmt.sql);
+        
+        // Copy data
+        const rows = db.prepare(`SELECT * FROM "${tableName}"`).all();
+        if (rows.length > 0) {
+          const placeholders = rows.map(() => '(?)').join(', ');
+          const values = rows.map((row: any) => Object.values(row));
+          const columns = Object.keys(rows[0]);
+          
+          // Insert in batches
+          const insert = backupDb.prepare(`INSERT INTO "${tableName}" ("${columns.join('", "')}") VALUES ${placeholders}`);
+          for (const row of rows) {
+            insert.run(...Object.values(row));
+          }
+        }
+      }
+    }
+
+    // Export to buffer
+    const backup = backupDb.backup();
+    const buffer = Buffer.from(backup);
+    
+    db.close();
+    backupDb.close();
+    
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="backup.db"');
+    res.send(buffer);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Restore API - Import SQLite database
+app.post('/api/restore', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const Database = require('better-sqlite3');
+    const path = require('path');
+    
+    // Save to temp file first
+    const tempPath = path.join(__dirname, '../../temp_restore.db');
+    require('fs').writeFileSync(tempPath, req.file.buffer);
+    
+    // Verify it's a valid SQLite database
+    const tempDb = new Database(tempPath, { readonly: true });
+    tempDb.close();
+    
+    res.json({ success: true, message: 'Database verified successfully', tempPath });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 DBForge Server running on http://localhost:${PORT} (MySQL + PostgreSQL)`);
 });
