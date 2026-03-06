@@ -101,7 +101,16 @@ export function SchemaPanel() {
     <div className="flex flex-col h-full">
       <div className="p-3 border-b border-gray-700 flex justify-between items-center">
         <h3 className="font-semibold text-gray-100">表结构</h3>
-        <CreateTableModal />
+        <div className="flex gap-2">
+          <button
+            onClick={() => addTab({ title: 'ER图', type: 'diagram' })}
+            className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded"
+            title="查看 ER 图"
+          >
+            ER图
+          </button>
+          <CreateTableModal />
+        </div>
       </div>
       
       <div className="flex-1 overflow-auto">

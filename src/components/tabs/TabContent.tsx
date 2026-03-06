@@ -1,6 +1,7 @@
 import { useTabStore } from '../../stores/tabStore';
 import { QueryEditor } from '../query/QueryEditor';
 import { DataPanel } from '../data/DataPanel';
+import { ERDiagram } from '../diagram/ERDiagram';
 
 export function TabContent() {
   const { getActiveTab } = useTabStore();
@@ -30,6 +31,14 @@ export function TabContent() {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <DataPanel tableName={activeTab.tableName} mode="edit" />
+      </div>
+    );
+  }
+
+  if (activeTab.type === 'diagram') {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden p-2">
+        <ERDiagram width={900} height={600} />
       </div>
     );
   }
