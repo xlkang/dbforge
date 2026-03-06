@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
 export function QueryHistory() {
-  const { queryHistory, setQuery } = useDatabaseStore();
+  const { queryHistory, setQuery, clearHistory } = useDatabaseStore();
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (queryHistory.length === 0) return null;
@@ -29,6 +29,12 @@ export function QueryHistory() {
               {query.length > 50 ? query.slice(0, 50) + '...' : query}
             </button>
           ))}
+          <button
+            onClick={clearHistory}
+            className="w-full px-3 py-2 text-left text-xs text-red-400 hover:text-red-300 hover:bg-gray-700/50"
+          >
+            清空历史
+          </button>
         </div>
       )}
     </div>

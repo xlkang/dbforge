@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDatabaseStore } from '../../stores/databaseStore';
+import { ImportCSVModal } from '../data/ImportCSVModal';
 
 type ExportFormat = 'csv' | 'json';
 
@@ -59,24 +60,25 @@ export function ExportPanel() {
   const canExport = queryResult && queryResult.isSelect && queryResult.rows.length > 0;
 
   return (
-    <div className="p-3 border-t border-gray-700">
-      <h4 className="text-sm font-semibold text-gray-300 mb-2">导出数据</h4>
+    <div className="p-3 border-t border-gray-700 space-y-2">
+      <h4 className="text-sm font-semibold text-gray-300">导出数据</h4>
       <div className="flex gap-2">
         <button
           onClick={() => handleExport('csv')}
           disabled={!canExport || isExporting}
           className="flex-1 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 rounded transition-colors"
         >
-          导出 CSV
+          CSV
         </button>
         <button
           onClick={() => handleExport('json')}
           disabled={!canExport || isExporting}
           className="flex-1 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 rounded transition-colors"
         >
-          导出 JSON
+          JSON
         </button>
       </div>
+      <ImportCSVModal />
     </div>
   );
 }

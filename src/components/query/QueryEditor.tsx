@@ -5,6 +5,7 @@ import { sql, SQLite } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { QueryHistory } from './QueryHistory';
+import { formatSQL } from '../../lib/sqlFormatter';
 
 export function QueryEditor() {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -83,6 +84,13 @@ export function QueryEditor() {
       <div className="p-3 border-b border-gray-700 flex items-center justify-between shrink-0">
         <h3 className="font-semibold text-gray-100">SQL 查询</h3>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setQuery(formatSQL(query))}
+            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded transition-colors"
+            title="格式化 SQL"
+          >
+            格式化
+          </button>
           <span className="text-xs text-gray-500">Ctrl+Enter 运行</span>
           <button
             onClick={() => executeQuery()}

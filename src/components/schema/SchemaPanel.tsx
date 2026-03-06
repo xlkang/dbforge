@@ -1,4 +1,5 @@
 import { useDatabaseStore } from '../../stores/databaseStore';
+import { CreateTableModal } from './CreateTableModal';
 
 export function SchemaPanel() {
   const { 
@@ -21,8 +22,9 @@ export function SchemaPanel() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-gray-700">
+      <div className="p-3 border-b border-gray-700 flex justify-between items-center">
         <h3 className="font-semibold text-gray-100">表结构</h3>
+        <CreateTableModal />
       </div>
       
       <div className="flex-1 overflow-auto">
