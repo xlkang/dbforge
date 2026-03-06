@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useContextMenu, type MenuItem } from '../common/ContextMenu';
 import { CreateTableModal } from './CreateTableModal';
+import { IndexModal } from './IndexModal';
 
 export function SchemaPanel() {
   const { 
@@ -17,6 +19,7 @@ export function SchemaPanel() {
   } = useDatabaseStore();
   const { addTab } = useTabStore();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
+  const [showIndexModal, setShowIndexModal] = useState(false);
 
   const handleDoubleClick = (tableName: string) => {
     addTab({
@@ -37,6 +40,14 @@ export function SchemaPanel() {
       {
         label: '查看数据',
         onClick: () => selectTable(tableName),
+      },
+      { label: '', onClick: () => {}, divider: true },
+      {
+        label: '创建索引',
+        onClick: () => {
+          selectTable(tableName);
+          setShowIndexModal(true);
+        },
       },
       { label: '', onClick: () => {}, divider: true },
       {
@@ -63,6 +74,19 @@ export function SchemaPanel() {
       },
     ];
     showContextMenu(e, items);
+  };
+
+  const handleDeleteIndex = async (indexName: string) => {
+    if (!selectedTable) return;
+    
+    if (confirm(`确定要删除索引 "${indexName}" 吗？`)) {
+      try {
+        await executeQuery(`DROP INDEX \`${indexName}\``);
+        await loadTables();
+      } catch (err) {
+        alert(`删除索引失败: ${err}`);
+      }
+    }
   };
 
   if (!connection) {
@@ -127,16 +151,43 @@ export function SchemaPanel() {
                     {/* Indexes */}
                     {tableIndexes.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Indexes</h4>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase">Indexes</h4>
+                          <button
+                            onClick={() => setShowIndexModal(true)}
+                            className="text-xs text-blue-400 hover:text-blue-300"
+                          >
+                            + 新建
+                          </button>
+                        </div>
                         <div className="space-y-1">
                           {tableIndexes.map(idx => (
-                            <div key={idx.name} className="text-sm">
-                              <span className="font-mono text-gray-300">{idx.name}</span>
-                              {idx.unique && <span className="text-blue-400 text-xs ml-1">UNIQUE</span>}
-                              <span className="text-gray-500 text-xs ml-1">({idx.columns.join(', ')})</span>
+                            <div key={idx.name} className="flex items-center justify-between text-sm group">
+                              <div>
+                                <span className="font-mono text-gray-300">{idx.name}</span>
+                                {idx.unique && <span className="text-blue-400 text-xs ml-1">UNIQUE</span>}
+                                <span className="text-gray-500 text-xs ml-1">({idx.columns.join(', ')})</span>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteIndex(idx.name)}
+                                className="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-300 text-xs"
+                              >
+                                删除
+                              </button>
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+                    
+                    {tableIndexes.length === 0 && (
+                      <div>
+                        <button
+                          onClick={() => setShowIndexModal(true)}
+                          className="text-xs text-blue-400 hover:text-blue-300"
+                        >
+                          + 创建索引
+                        </button>
                       </div>
                     )}
                   </div>
@@ -146,6 +197,10 @@ export function SchemaPanel() {
           </div>
         )}
       </div>
+
+      {showIndexModal && selectedTable && (
+        <IndexModal tableName={selectedTable} onClose={() => setShowIndexModal(false)} />
+      )}
 
       {contextMenu && (
         <div
