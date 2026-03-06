@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
+import { Database, Server, Upload, X, Trash2, Edit3, Plus, FileText, FolderOpen, Wifi } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useConnectionStore } from '../../stores/connectionStore';
 import { MySQLConnect } from '../connect/MySQLConnect';
@@ -21,7 +22,6 @@ export function DatabasePanel() {
     const file = e.target.files?.[0];
     if (file) {
       await openDatabase(file);
-      // 记录最近文件
       addRecentSQLite(file.name, file.name);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -60,7 +60,6 @@ export function DatabasePanel() {
   }, [openDatabase, addRecentSQLite]);
 
   const handleConnectSaved = (conn: MySQLConnection) => {
-    // 使用保存的连接信息连接 MySQL
     setConnection({
       id: conn.id,
       type: 'mysql',
@@ -87,58 +86,77 @@ export function DatabasePanel() {
     }
   };
 
-  // 已连接时显示连接信息
+  // 已连接状态
   if (connection) {
-    const typeLabel = connection.type === 'mysql' ? 'MySQL' : 'SQLite';
+    const isMysql = connection.type === 'mysql';
     return (
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-semibold mb-3 text-gray-100">数据库连接</h2>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-            <span className="text-green-400 font-medium">{connection.name}</span>
+      <div className="p-3 border-b border-gray-700/50">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-300">当前连接</h2>
+          <button
+            onClick={closeDatabase}
+            className="p-1.5 rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-colors"
+            title="断开连接"
+          >
+            <X className="w-4 h-4" strokeWidth={2} />
+          </button>
+        </div>
+        
+        <div className="bg-gradient-to-br from-gray-800/80 to-gray-800/40 rounded-xl p-3 border border-gray-700/50">
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`p-2 rounded-lg ${isMysql ? 'bg-orange-500/20' : 'bg-blue-500/20'}`}>
+              {isMysql ? (
+                <Server className="w-4 h-4 text-orange-400" strokeWidth={2} />
+              ) : (
+                <Database className="w-4 h-4 text-blue-400" strokeWidth={2} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <Wifi className="w-3 h-3 text-green-400" strokeWidth={2} />
+                <span className="text-white font-medium text-sm truncate">{connection.name}</span>
+              </div>
+              <div className="text-xs text-gray-500">{isMysql ? 'MySQL' : 'SQLite'}</div>
+            </div>
           </div>
-          <div className="text-xs text-gray-500">{typeLabel}</div>
-          {connection.type === 'mysql' && (
-            <div className="text-xs text-gray-500">
+          
+          {isMysql && (
+            <div className="text-xs text-gray-500 pl-11">
               {connection.host}:{connection.port}/{connection.database}
             </div>
           )}
-          <button
-            onClick={closeDatabase}
-            className="w-full px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-          >
-            关闭连接
-          </button>
         </div>
       </div>
     );
   }
 
+  // 未连接状态
   return (
-    <div className="p-4 border-b border-gray-700">
-      <h2 className="text-lg font-semibold mb-3 text-gray-100">数据库连接</h2>
+    <div className="p-3 border-b border-gray-700/50">
+      <h2 className="text-sm font-semibold text-gray-300 mb-3">连接数据库</h2>
       
       {/* 模式切换 */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-1.5 p-1 bg-gray-800/60 rounded-lg mb-3">
         <button
           onClick={() => setMode('sqlite')}
-          className={`flex-1 py-2 text-sm rounded transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${
             mode === 'sqlite' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              ? 'bg-gray-700 text-white shadow-sm' 
+              : 'text-gray-500 hover:text-gray-400'
           }`}
         >
+          <Database className="w-3.5 h-3.5" strokeWidth={2} />
           SQLite
         </button>
         <button
           onClick={() => setMode('mysql')}
-          className={`flex-1 py-2 text-sm rounded transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${
             mode === 'mysql' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              ? 'bg-gray-700 text-white shadow-sm' 
+              : 'text-gray-500 hover:text-gray-400'
           }`}
         >
+          <Server className="w-3.5 h-3.5" strokeWidth={2} />
           MySQL
         </button>
       </div>
@@ -155,40 +173,46 @@ export function DatabasePanel() {
           />
           <label
             htmlFor="db-file-input"
-            className={`block w-full px-4 py-3 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+            className={`flex flex-col items-center justify-center gap-2 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
               isDragging 
                 ? 'border-blue-500 bg-blue-500/10' 
-                : 'border-gray-600 hover:border-blue-500 hover:bg-gray-800'
+                : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
             {isConnecting ? (
-              <span className="text-blue-400">连接中...</span>
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <span className="text-gray-400">
-                点击选择或拖拽数据库文件<br />
-                <span className="text-xs text-gray-500">.db, .sqlite, .sqlite3</span>
-              </span>
+              <>
+                <div className="p-2.5 bg-gray-800 rounded-xl">
+                  <Upload className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
+                </div>
+                <div className="text-center">
+                  <span className="text-gray-300 text-sm">点击或拖拽文件</span>
+                  <p className="text-gray-600 text-xs mt-0.5">.db, .sqlite, .sqlite3</p>
+                </div>
+              </>
             )}
           </label>
           
           {/* 最近文件 */}
           {recentSQLiteFiles.length > 0 && (
             <div>
-              <h4 className="text-xs text-gray-500 mb-2">最近文件</h4>
+              <div className="flex items-center gap-1.5 mb-2">
+                <FolderOpen className="w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+                <span className="text-xs text-gray-500 font-medium">最近文件</span>
+              </div>
               <div className="space-y-1">
-                {recentSQLiteFiles.map((file, idx) => (
+                {recentSQLiteFiles.slice(0, 3).map((file, idx) => (
                   <button
                     key={idx}
-                    onClick={() => {
-                      // TODO: 重新打开文件
-                    }}
-                    className="w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:bg-gray-700 rounded truncate"
+                    className="w-full flex items-center gap-2 px-2.5 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-gray-300 rounded-lg transition-colors group"
                     title={file.path}
                   >
-                    📄 {file.name}
+                    <FileText className="w-4 h-4 text-gray-600 group-hover:text-gray-400" strokeWidth={1.5} />
+                    <span className="truncate">{file.name}</span>
                   </button>
                 ))}
               </div>
@@ -196,7 +220,7 @@ export function DatabasePanel() {
           )}
           
           {error && (
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-red-400 text-xs px-2">{error}</p>
           )}
         </div>
       ) : (
@@ -204,32 +228,38 @@ export function DatabasePanel() {
           {/* 保存的连接列表 */}
           {savedConnections.length > 0 && (
             <div>
-              <h4 className="text-xs text-gray-500 mb-2">保存的连接</h4>
-              <div className="space-y-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Wifi className="w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+                <span className="text-xs text-gray-500 font-medium">已保存的连接</span>
+              </div>
+              <div className="space-y-1.5">
                 {savedConnections.map((conn) => (
                   <div
                     key={conn.id}
-                    className="flex items-center justify-between px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 group cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-2.5 bg-gray-800/50 hover:bg-gray-800 rounded-lg cursor-pointer group transition-colors"
                     onClick={() => handleConnectSaved(conn)}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-200 truncate">{conn.name}</div>
-                      <div className="text-xs text-gray-500">{conn.host}:{conn.port}/{conn.database}</div>
+                    <div className="p-1.5 bg-orange-500/20 rounded">
+                      <Server className="w-3.5 h-3.5 text-orange-400" strokeWidth={2} />
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-300 truncate">{conn.name}</div>
+                      <div className="text-xs text-gray-600">{conn.host}:{conn.port}</div>
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => handleEditConnection(conn, e)}
-                        className="p-1 text-gray-400 hover:text-blue-400"
+                        className="p-1.5 hover:bg-gray-700 rounded text-gray-500 hover:text-blue-400 transition-colors"
                         title="编辑"
                       >
-                        ✏️
+                        <Edit3 className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteConnection(conn.id, e)}
-                        className="p-1 text-gray-400 hover:text-red-400"
+                        className="p-1.5 hover:bg-red-500/20 rounded text-gray-500 hover:text-red-400 transition-colors"
                         title="删除"
                       >
-                        🗑️
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                     </div>
                   </div>
@@ -244,11 +274,13 @@ export function DatabasePanel() {
               setEditingConnection(undefined);
               setShowConnectionModal(true);
             }}
-            className="w-full px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20"
           >
-            + 新建连接
+            <Plus className="w-4 h-4" strokeWidth={2} />
+            新建 MySQL 连接
           </button>
           
+          {/* MySQL 快速连接表单 */}
           <MySQLConnect />
         </div>
       )}
