@@ -136,13 +136,13 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
   }, [connection?.type]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-900">
+    <div className="flex flex-col h-full bg-[var(--bg-primary)]">
       {/* Header */}
-      <div className="px-4 py-2.5 border-b border-gray-800 flex items-center justify-between shrink-0 bg-gray-900/50">
+      <div className="px-4 py-2.5 border-b border-gray-800 flex items-center justify-between shrink-0 bg-[var(--bg-primary)]/50">
         <div className="flex items-center gap-2">
-          <Code className="w-4 h-4 text-blue-400" strokeWidth={2} />
-          <h3 className="text-sm font-medium text-gray-300">SQL 编辑器</h3>
-          <span className="text-xs text-gray-600 bg-gray-800 px-1.5 py-0.5 rounded">Ctrl+Enter 运行</span>
+          <Code className="w-4 h-4 text-[var(--accent)]" strokeWidth={2} />
+          <h3 className="text-sm font-medium text-[var(--text-secondary)]">SQL 编辑器</h3>
+          <span className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded">Ctrl+Enter 运行</span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
           <div className="relative">
             <button
               onClick={() => setShowTemplates(!showTemplates)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-medium rounded-lg transition-colors border border-gray-700 hover:border-gray-600"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs font-medium rounded-lg transition-colors border border-[var(--border-color)] hover:border-[var(--border-color)]"
               title="SQL 模板 (Ctrl+Space)"
             >
               <Wand2 className="w-3.5 h-3.5" strokeWidth={2} />
@@ -165,16 +165,16 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
                   className="fixed inset-0 z-10" 
                   onClick={() => setShowTemplates(false)} 
                 />
-                <div className="absolute right-0 top-full mt-1.5 w-72 max-h-80 overflow-hidden bg-gray-900 border border-gray-700/50 rounded-xl shadow-2xl z-20">
+                <div className="absolute right-0 top-full mt-1.5 w-72 max-h-80 overflow-hidden bg-[var(--bg-primary)] border border-[var(--border-color)]/50 rounded-xl shadow-2xl z-20">
                   <div className="p-2 border-b border-gray-800">
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" strokeWidth={2} />
                       <input
                         type="text"
                         placeholder="搜索模板..."
                         value={templateSearch}
                         onChange={(e) => setTemplateSearch(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+                        className="w-full pl-8 pr-3 py-1.5 text-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
                         autoFocus
                       />
                     </div>
@@ -184,10 +184,10 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
                       <button
                         key={i}
                         onClick={() => insertTemplate(t.sql)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-800 rounded-lg flex flex-col gap-0.5 transition-colors"
+                        className="w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] rounded-lg flex flex-col gap-0.5 transition-colors"
                       >
-                        <span className="text-gray-300 text-sm font-medium">{t.label}</span>
-                        <span className="text-gray-600 text-xs">{t.detail}</span>
+                        <span className="text-[var(--text-secondary)] text-sm font-medium">{t.label}</span>
+                        <span className="text-[var(--text-muted)] text-xs">{t.detail}</span>
                       </button>
                     ))}
                   </div>
@@ -198,7 +198,7 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
 
           <button
             onClick={handleFormat}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-medium rounded-lg transition-colors border border-gray-700 hover:border-gray-600"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs font-medium rounded-lg transition-colors border border-[var(--border-color)] hover:border-[var(--border-color)]"
             title="格式化 SQL (Shift+Ctrl+F)"
           >
             <Code className="w-3.5 h-3.5" strokeWidth={2} />
