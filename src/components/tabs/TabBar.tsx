@@ -1,5 +1,19 @@
+import { Plus, X, Table2, Code, Network, FileText } from 'lucide-react';
 import { useTabStore } from '../../stores/tabStore';
 import { ContextMenu, type MenuItem, useContextMenu } from '../common/ContextMenu';
+
+const TabIcon = ({ type }: { type: string }) => {
+  switch (type) {
+    case 'table':
+      return <Table2 className="w-3.5 h-3.5" strokeWidth={2} />;
+    case 'query':
+      return <Code className="w-3.5 h-3.5" strokeWidth={2} />;
+    case 'diagram':
+      return <Network className="w-3.5 h-3.5" strokeWidth={2} />;
+    default:
+      return <FileText className="w-3.5 h-3.5" strokeWidth={2} />;
+  }
+};
 
 export function TabBar() {
   const { tabs, activeTabId, setActiveTab, removeTab, addTab } = useTabStore();
@@ -36,30 +50,33 @@ export function TabBar() {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex bg-gray-900 border-b border-gray-700 overflow-x-auto scrollbar-thin">
-      {tabs.map((tab) => (
-        <div
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          onContextMenu={(e) => handleContextMenu(e, tab.id)}
-          className={`flex items-center gap-2 px-4 py-2 text-sm cursor-pointer border-r border-gray-700 min-w-[100px] max-w-[200px] group ${
-            activeTabId === tab.id
-              ? 'bg-gray-800 text-white border-b-2 border-b-blue-500'
-              : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-          }`}
-        >
-          <span className="truncate flex-1">{tab.title}</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              removeTab(tab.id);
-            }}
-            className="opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
+    <div className="flex items-center bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 overflow-x-auto">
+      <div className="flex items-center">
+        {tabs.map((tab) => (
+          <div
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            onContextMenu={(e) => handleContextMenu(e, tab.id)}
+            className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer border-r border-gray-800 min-w-[120px] max-w-[200px] group transition-all ${
+              activeTabId === tab.id
+                ? 'bg-gray-800 text-white border-b-2 border-b-blue-500'
+                : 'text-gray-500 hover:bg-gray-800/50 hover:text-gray-300 border-b-2 border-b-transparent'
+            }`}
           >
-            ×
-          </button>
-        </div>
-      ))}
+            <TabIcon type={tab.type} />
+            <span className="truncate flex-1 text-sm font-medium">{tab.title}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeTab(tab.id);
+              }}
+              className="opacity-0 group-hover:opacity-100 hover:bg-gray-700 p-0.5 rounded text-gray-500 hover:text-red-400 transition-all"
+            >
+              <X className="w-3 h-3" strokeWidth={2} />
+            </button>
+          </div>
+        ))}
+      </div>
 
       <button
         onClick={() =>
@@ -69,10 +86,10 @@ export function TabBar() {
             sql: '',
           })
         }
-        className="px-3 py-2 text-gray-500 hover:text-gray-300 hover:bg-gray-800"
+        className="mx-2 p-1.5 text-gray-600 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
         title="新建查询"
       >
-        +
+        <Plus className="w-4 h-4" strokeWidth={2} />
       </button>
 
       {contextMenu && (
