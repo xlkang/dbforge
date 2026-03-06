@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
@@ -394,82 +395,124 @@ export function DataViewer({ tableName }: DataViewerProps) {
         </div>
       )}
 
-      {/* Table */}
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-[var(--bg-secondary)]/80 sticky top-0 z-10 backdrop-blur-sm">
-            <tr>
-              <th className="px-3 py-2.5 text-left text-[var(--text-muted)] font-medium text-xs border-b border-[var(--border-color)] w-14">#</th>
-              {columns.map(col => (
-                <th 
-                  key={col} 
-                  className="px-3 py-2.5 text-left text-[var(--text-muted)] font-medium text-xs border-b border-[var(--border-color)] font-mono min-w-[120px] cursor-pointer hover:bg-[var(--bg-tertiary)]/50 transition-colors group"
-                  onClick={() => {
-                    if (sortColumn === col) {
-                      if (sortDirection === 'asc') {
-                        setSortDirection('desc');
-                      } else {
-                        setSortColumn(null);
-                        setSortDirection('asc');
-                      }
-                    } else {
-                      setSortColumn(col);
-                      setSortDirection('asc');
-                    }
-                    setCurrentPage(1);
-                  }}
+      {/* Table - Use Virtuoso for large datasets */}
+      <div className="flex-1 overflow-hidden">
+        {displayRows.length > 500 ? (
+          <Virtuoso
+            style={{ height: '100%' }}
+            totalCount={displayRows.length}
+            overscan={20}
+            itemContent={(idx) => {
+              const row = displayRows[idx];
+              return (
+                <tr 
+                  className="hover:bg-[var(--bg-secondary)]/50 border-b border-gray-800/50 transition-colors"
                 >
-                  <div className="flex items-center gap-1.5">
-                    {col}
-                    {sortColumn === col ? (
-                      sortDirection === 'asc' ? 
-                        <ArrowUp className="w-3 h-3 text-[var(--accent)]" /> : 
-                        <ArrowDown className="w-3 h-3 text-[var(--accent)]" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-700 opacity-0 group-hover:opacity-100" />
-                    )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedRows.map((row, idx) => (
-              <tr 
-                key={startIndex + idx} 
-                className="hover:bg-[var(--bg-secondary)]/50 border-b border-gray-800/50 transition-colors"
-              >
-                <td className="px-3 py-2.5 text-[var(--text-muted)] text-xs text-right font-mono">{startIndex + idx + 1}</td>
-                {columns.map(col => (
-                  <td 
-                    key={col} 
-                    className="px-3 py-2.5 text-[var(--text-secondary)] font-mono max-w-[300px] truncate"
+                  <td className="px-3 py-2.5 text-[var(--text-muted)] text-xs text-right font-mono w-14">{idx + 1}</td>
+                  {columns.map(col => (
+                    <td 
+                      key={col} 
+                      className="px-3 py-2.5 text-[var(--text-secondary)] font-mono max-w-[300px] truncate"
+                    >
+                      {row[col] === null ? (
+                        <span className="text-[var(--text-muted)] italic">NULL</span>
+                      ) : quickFilter?.col === col && quickFilter?.val === row[col] ? (
+                        <span className="bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                          {highlightText(String(row[col]))}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setQuickFilter({ col, val: row[col] })}
+                          className="hover:text-purple-400 text-left w-full"
+                          title="点击快速过滤"
+                        >
+                          {highlightText(String(row[col]))}
+                        </button>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            }}
+          />
+        ) : (
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-[var(--bg-secondary)]/80 sticky top-0 z-10 backdrop-blur-sm">
+                <tr>
+                  <th className="px-3 py-2.5 text-left text-[var(--text-muted)] font-medium text-xs border-b border-[var(--border-color)] w-14">#</th>
+                  {columns.map(col => (
+                    <th 
+                      key={col} 
+                      className="px-3 py-2.5 text-left text-[var(--text-muted)] font-medium text-xs border-b border-[var(--border-color)] font-mono min-w-[120px] cursor-pointer hover:bg-[var(--bg-tertiary)]/50 transition-colors group"
+                      onClick={() => {
+                        if (sortColumn === col) {
+                          if (sortDirection === 'asc') {
+                            setSortDirection('desc');
+                          } else {
+                            setSortColumn(null);
+                            setSortDirection('asc');
+                          }
+                        } else {
+                          setSortColumn(col);
+                          setSortDirection('asc');
+                        }
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {col}
+                        {sortColumn === col ? (
+                          sortDirection === 'asc' ? 
+                            <ArrowUp className="w-3 h-3 text-[var(--accent)]" /> : 
+                            <ArrowDown className="w-3 h-3 text-[var(--accent)]" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-gray-700 opacity-0 group-hover:opacity-100" />
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedRows.map((row, idx) => (
+                  <tr 
+                    key={startIndex + idx} 
+                    className="hover:bg-[var(--bg-secondary)]/50 border-b border-gray-800/50 transition-colors"
                   >
-                    {row[col] === null ? (
-                      <span className="text-[var(--text-muted)] italic">NULL</span>
-                    ) : quickFilter?.col === col && quickFilter?.val === row[col] ? (
-                      <span className="bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
-                        {highlightText(String(row[col]))}
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setQuickFilter({ col, val: row[col] })}
-                        className="hover:text-purple-400 text-left w-full"
-                        title="点击快速过滤"
+                    <td className="px-3 py-2.5 text-[var(--text-muted)] text-xs text-right font-mono">{startIndex + idx + 1}</td>
+                    {columns.map(col => (
+                      <td 
+                        key={col} 
+                        className="px-3 py-2.5 text-[var(--text-secondary)] font-mono max-w-[300px] truncate"
                       >
-                        {highlightText(String(row[col]))}
-                      </button>
-                    )}
-                  </td>
+                        {row[col] === null ? (
+                          <span className="text-[var(--text-muted)] italic">NULL</span>
+                        ) : quickFilter?.col === col && quickFilter?.val === row[col] ? (
+                          <span className="bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                            {highlightText(String(row[col]))}
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setQuickFilter({ col, val: row[col] })}
+                            className="hover:text-purple-400 text-left w-full"
+                            title="点击快速过滤"
+                          >
+                            {highlightText(String(row[col]))}
+                          </button>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* Pagination - Hide when using Virtuoso */}
+      {totalPages > 1 && displayRows.length <= 500 && (
         <div className="px-4 py-2 border-t border-gray-800 flex items-center justify-between bg-[var(--bg-primary)]/80 shrink-0">
           <div className="flex items-center gap-4">
             <div className="text-xs text-[var(--text-muted)]">
