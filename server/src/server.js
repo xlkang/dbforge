@@ -124,6 +124,49 @@ app.post('/api/count', async (req, res) => {
   }
 });
 
+// 获取所有视图
+app.post('/api/views', async (req, res) => {
+  try {
+    const { host, port, user, password, database } = req.body;
+    const pool = await getPool({ host, port, user, password, database });
+    
+    const [views] = await pool.query(`
+      SELECT 
+        TABLE_NAME as name,
+        VIEW_DEFINITION as definition
+      FROM INFORMATION_SCHEMA.VIEWS
+      WHERE TABLE_SCHEMA = ?
+    `, [database]);
+    
+    res.json({ success: true, views });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// 获取所有触发器
+app.post('/api/triggers', async (req, res) => {
+  try {
+    const { host, port, user, password, database } = req.body;
+    const pool = await getPool({ host, port, user, password, database });
+    
+    const [triggers] = await pool.query(`
+      SELECT 
+        TRIGGER_NAME as name,
+        EVENT_MANIPULATION as event,
+        EVENT_OBJECT_TABLE as table_name,
+        ACTION_TIMING as timing,
+        ACTION_STATEMENT as statement
+      FROM INFORMATION_SCHEMA.TRIGGERS
+      WHERE TRIGGER_SCHEMA = ?
+    `, [database]);
+    
+    res.json({ success: true, triggers });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 DBForge Server running on http://localhost:${PORT}`);
 });

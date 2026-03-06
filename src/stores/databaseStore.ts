@@ -38,6 +38,8 @@ interface DatabaseState {
   clearResult: () => void;
   clearHistory: () => void;
   loadTables: () => Promise<void>;
+  loadViews: () => Promise<void>;
+  loadTriggers: () => Promise<void>;
 }
 
 export const useDatabaseStore = create<DatabaseState>((set, get) => ({
@@ -152,6 +154,60 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       }
     } catch (error) {
       set({ error: '加载表失败' });
+    }
+  },
+  
+  loadViews: async () => {
+    const { connection } = get();
+    if (!connection || connection.type !== 'mysql') return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/views`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: connection.host,
+          port: connection.port,
+          user: connection.user,
+          password: connection.password,
+          database: connection.database,
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // Views loaded - could be stored in state if needed
+        console.log('Views:', data.views);
+      }
+    } catch (error) {
+      console.error('加载视图失败:', error);
+    }
+  },
+  
+  loadTriggers: async () => {
+    const { connection } = get();
+    if (!connection || connection.type !== 'mysql') return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/triggers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: connection.host,
+          port: connection.port,
+          user: connection.user,
+          password: connection.password,
+          database: connection.database,
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // Triggers loaded - could be stored in state if needed
+        console.log('Triggers:', data.triggers);
+      }
+    } catch (error) {
+      console.error('加载触发器失败:', error);
     }
   },
   
