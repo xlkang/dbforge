@@ -4,6 +4,27 @@ import * as db from '../lib/database';
 
 const API_BASE = '/api';
 
+// 请求超时辅助函数
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 30000): Promise<Response> => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if ((error as Error).name === 'AbortError') {
+      throw new Error('请求超时，请检查网络连接');
+    }
+    throw error;
+  }
+};
+
 // 从 localStorage 恢复连接
 function loadPersistedConnection(): DatabaseConnection | null {
   try {
@@ -144,7 +165,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set({ isConnecting: true, error: null });
     
     try {
-      const res = await fetch(`${API_BASE}/connect`, {
+      const res = await fetchWithTimeout(`${API_BASE}/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -177,7 +198,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const res = await fetch(`${API_BASE}/tables`, {
+      const res = await fetchWithTimeout(`${API_BASE}/tables`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -198,7 +219,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       if (data.success) {
         const tables: TableInfo[] = await Promise.all(
           data.tables.map(async (t: any) => {
-            const countRes = await fetch(`${API_BASE}/count`, {
+            const countRes = await fetchWithTimeout(`${API_BASE}/count`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -304,7 +325,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     
     if (connection?.type === 'mysql') {
       try {
-        const res = await fetch(`${API_BASE}/schema`, {
+        const res = await fetchWithTimeout(`${API_BASE}/schema`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -377,7 +398,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       let result: QueryResult;
       
       if (connection?.type === 'mysql') {
-        const res = await fetch(`${API_BASE}/query`, {
+        const res = await fetchWithTimeout(`${API_BASE}/query`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -437,7 +458,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     
     try {
       if (connection?.type === 'mysql') {
-        const res = await fetch(`${API_BASE}/query`, {
+        const res = await fetchWithTimeout(`${API_BASE}/query`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -190,6 +190,53 @@ export function DataViewer({ tableName }: DataViewerProps) {
     );
   };
 
+  // Export function for query results
+  const handleExport = (format: 'csv' | 'json') => {
+    const { columns, rows } = queryResult;
+    if (!columns.length || !rows.length) return;
+
+    let content: string;
+    let mimeType: string;
+    let filename: string;
+
+    if (format === 'csv') {
+      const header = columns.map(col => {
+        if (col.includes(',') || col.includes('"') || col.includes('\n')) {
+          return `"${col.replace(/"/g, '""')}"`;
+        }
+        return col;
+      }).join(',');
+      const dataRows = rows.map(row => 
+        columns.map(col => {
+          const val = row[col];
+          if (val === null) return '';
+          const strVal = String(val);
+          if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+            return `"${strVal.replace(/"/g, '""')}"`;
+          }
+          return strVal;
+        }).join(',')
+      );
+      content = [header, ...dataRows].join('\n');
+      mimeType = 'text/csv';
+      filename = `${displayTable || 'query_result'}.csv`;
+    } else {
+      content = JSON.stringify(rows, null, 2);
+      mimeType = 'application/json';
+      filename = `${displayTable || 'query_result'}.json`;
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[var(--bg-primary)]">
       {/* Header */}
@@ -268,6 +315,33 @@ export function DataViewer({ tableName }: DataViewerProps) {
               <Filter className="w-3.5 h-3.5" />
               清除
             </button>
+          )}
+          
+          {/* Export Dropdown */}
+          {isSelect && columns.length > 0 && rows.length > 0 && (
+            <div className="relative group">
+              <button
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-green-600/20 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/30 transition-all"
+                title="导出查询结果"
+              >
+                <Download className="w-3.5 h-3.5" />
+                导出
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-28 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="w-full px-3 py-2 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-t-lg"
+                >
+                  导出 CSV
+                </button>
+                <button
+                  onClick={() => handleExport('json')}
+                  className="w-full px-3 py-2 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-b-lg"
+                >
+                  导出 JSON
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

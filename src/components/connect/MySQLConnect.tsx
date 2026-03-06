@@ -13,9 +13,34 @@ export function MySQLConnect() {
     database: '',
   });
   const [connecting, setConnecting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 表单验证
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!form.host.trim()) {
+      newErrors.host = '请输入主机地址';
+    }
+    if (!form.port || form.port < 1 || form.port > 65535) {
+      newErrors.port = '端口无效';
+    }
+    if (!form.user.trim()) {
+      newErrors.user = '请输入用户名';
+    }
+    if (!form.database.trim()) {
+      newErrors.database = '请输入数据库名';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    if (!validate()) return;
+    
     setConnecting(true);
     setError(null);
 
@@ -60,30 +85,39 @@ export function MySQLConnect() {
       
       <form onSubmit={handleSubmit} className="space-y-2.5">
         <div className="grid grid-cols-2 gap-2">
-          <input
-            type="text"
-            value={form.host}
-            onChange={(e) => setForm({ ...form, host: e.target.value })}
-            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-            placeholder="主机"
-          />
-          <input
-            type="number"
-            value={form.port}
-            onChange={(e) => setForm({ ...form, port: parseInt(e.target.value) })}
-            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] focus:outline-none focus:border-blue-500/50"
-            placeholder="端口"
-          />
+          <div>
+            <input
+              type="text"
+              value={form.host}
+              onChange={(e) => setForm({ ...form, host: e.target.value })}
+              className={`px-3 py-2 bg-[var(--bg-secondary)] border rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50 ${errors.host ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+              placeholder="主机"
+            />
+            {errors.host && <p className="text-red-400 text-[10px] mt-1">{errors.host}</p>}
+          </div>
+          <div>
+            <input
+              type="number"
+              value={form.port}
+              onChange={(e) => setForm({ ...form, port: parseInt(e.target.value) || 3306 })}
+              className={`px-3 py-2 bg-[var(--bg-secondary)] border rounded-lg text-sm text-[var(--text-secondary)] focus:outline-none focus:border-blue-500/50 ${errors.port ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+              placeholder="端口"
+            />
+            {errors.port && <p className="text-red-400 text-[10px] mt-1">{errors.port}</p>}
+          </div>
         </div>
         
         <div className="grid grid-cols-2 gap-2">
-          <input
-            type="text"
-            value={form.user}
-            onChange={(e) => setForm({ ...form, user: e.target.value })}
-            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-            placeholder="用户名"
-          />
+          <div>
+            <input
+              type="text"
+              value={form.user}
+              onChange={(e) => setForm({ ...form, user: e.target.value })}
+              className={`px-3 py-2 bg-[var(--bg-secondary)] border rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50 ${errors.user ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+              placeholder="用户名"
+            />
+            {errors.user && <p className="text-red-400 text-[10px] mt-1">{errors.user}</p>}
+          </div>
           <input
             type="password"
             value={form.password}
@@ -93,14 +127,17 @@ export function MySQLConnect() {
           />
         </div>
 
-        <input
-          type="text"
-          value={form.database}
-          onChange={(e) => setForm({ ...form, database: e.target.value })}
-          className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-          placeholder="数据库名"
-          required
-        />
+        <div>
+          <input
+            type="text"
+            value={form.database}
+            onChange={(e) => setForm({ ...form, database: e.target.value })}
+            className={`w-full px-3 py-2 bg-[var(--bg-secondary)] border rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50 ${errors.database ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+            placeholder="数据库名 *"
+            required
+          />
+          {errors.database && <p className="text-red-400 text-[10px] mt-1">{errors.database}</p>}
+        </div>
 
         <button
           type="submit"
