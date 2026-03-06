@@ -1,3 +1,5 @@
+import type { SSHConfig } from './ssh';
+
 export type DatabaseType = 'sqlite' | 'mysql' | 'postgresql';
 
 export interface DatabaseConnection {
@@ -11,6 +13,7 @@ export interface DatabaseConnection {
   password?: string;    // MySQL 密码
   database?: string;    // MySQL 数据库名
   isConnected: boolean;
+  ssh?: SSHConfig;
 }
 
 export interface TableInfo {

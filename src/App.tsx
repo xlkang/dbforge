@@ -4,6 +4,7 @@ import { useTabStore } from './stores/tabStore';
 import { DatabasePanel } from './components/connection/DatabasePanel';
 import { QuickStart } from './components/layout/QuickStart';
 import { SchemaPanel } from './components/schema/SchemaPanel';
+import { ViewsTriggersPanel } from './components/schema/ViewsTriggersPanel';
 import { QueryEditor } from './components/query/QueryEditor';
 import { SavedQueries } from './components/query/SavedQueries';
 import { DataViewer } from './components/data/DataViewer';
@@ -134,6 +135,7 @@ function App() {
             {connection ? (
               <>
                 <DatabasePanel />
+                <ViewsTriggersPanel />
                 <div className="flex-1 overflow-hidden">
                   <SchemaPanel />
                 </div>

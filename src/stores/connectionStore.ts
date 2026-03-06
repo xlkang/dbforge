@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { SSHConfig } from '../types/ssh';
 import { persist } from 'zustand/middleware';
 
 export interface MySQLConnection {
@@ -10,6 +11,7 @@ export interface MySQLConnection {
   user: string;
   password: string;
   database: string;
+  ssh?: SSHConfig;
 }
 
 export interface SQLiteRecentFile {

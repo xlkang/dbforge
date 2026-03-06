@@ -60,6 +60,9 @@ interface DatabaseState {
   tableColumns: ColumnInfo[];
   tableIndexes: IndexInfo[];
   tableRowCount: number;
+  // Views and triggers
+  views: string[];
+  triggers: string[];
   
   // Query state
   query: string;
@@ -99,6 +102,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   tableColumns: [],
   tableIndexes: [],
   tableRowCount: 0,
+  views: [],
+  triggers: [],
   
   query: 'SELECT * FROM ',
   queryHistory: [],
@@ -150,6 +155,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       tableColumns: [],
       tableIndexes: [],
       tableRowCount: 0,
+  views: [],
+  triggers: [],
       isLoading: conn.type === 'mysql', // MySQL 需要加载
     });
     // 加载 MySQL 表
@@ -267,7 +274,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const data = await res.json();
       
       if (data.success) {
-        console.log('Views:', data.views);
+        set({ views: data.views.map((v: any) => v.name || v.TABLE_NAME) });
       }
     } catch (error) {
       console.error('加载视图失败:', error);
@@ -293,7 +300,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const data = await res.json();
       
       if (data.success) {
-        console.log('Triggers:', data.triggers);
+        set({ triggers: data.triggers.map((t: any) => t.name || t.TRIGGER_NAME) });
       }
     } catch (error) {
       console.error('加载触发器失败:', error);
@@ -312,6 +319,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       tableColumns: [],
       tableIndexes: [],
       tableRowCount: 0,
+  views: [],
+  triggers: [],
       queryResult: null,
       queryError: null,
       query: 'SELECT * FROM ',
