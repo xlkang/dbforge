@@ -46,17 +46,27 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen flex flex-col bg-gray-900 text-gray-100">
+      <div className="h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <ToastContainer />
         
-        {/* Header */}
-        <header className="h-12 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 shrink-0">
-          <div className="flex items-center">
-            <h1 className="text-lg font-bold text-blue-400">DBForge</h1>
-            <span className="ml-2 text-xs text-gray-500">{typeLabel} 数据库管理工具</span>
-            {dbName && <span className="ml-2 text-xs text-blue-300">- {dbName}</span>}
+        {/* Header - Navicat style */}
+        <header className="h-11 bg-[var(--header-bg)] border-b border-[var(--border-color)] flex items-center justify-between px-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-md flex items-center justify-center">
+                <span className="text-white text-xs font-bold">DB</span>
+              </div>
+              <h1 className="text-base font-semibold text-[var(--text-primary)]">DBForge</h1>
+            </div>
+            {connection && (
+              <div className="flex items-center gap-2 px-2 py-1 bg-[var(--bg-hover)] rounded-md">
+                <span className="text-xs text-[var(--accent)]">{typeLabel}</span>
+                <span className="text-xs text-[var(--text-muted)]">|</span>
+                <span className="text-xs text-[var(--text-secondary)] font-mono">{dbName}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <SavedQueries />
             <ShortcutsPanel />
             <ThemeToggle />
@@ -68,8 +78,8 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
-          <aside className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 overflow-hidden">
+          {/* Sidebar - Navicat style */}
+          <aside className="w-64 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] flex flex-col shrink-0 overflow-hidden">
             {connection ? (
               <>
                 <DatabasePanel />
@@ -98,10 +108,10 @@ function App() {
             ) : connection ? (
               <>
                 {/* Legacy layout for backward compatibility */}
-                <div className="h-56 border-b border-gray-700 shrink-0 overflow-hidden">
+                <div className="h-56 border-b border-[var(--border-color)] shrink-0 overflow-hidden">
                   <QueryEditor />
                 </div>
-                <div className="flex-1 flex flex-col overflow-hidden bg-gray-900">
+                <div className="flex-1 flex flex-col overflow-hidden bg-[var(--bg-primary)]">
                   <div className="flex-1 overflow-hidden">
                     <DataViewer />
                   </div>
