@@ -319,7 +319,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   },
   
   selectTable: async (tableName: string) => {
-    const { connection } = get();
+    const { connection, executeQuery } = get();
     
     set({ selectedTable: tableName, query: `SELECT * FROM \`${tableName}\` LIMIT 100`, isLoading: true });
     
@@ -369,6 +369,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
             tableRowCount: get().tables.find(t => t.name === tableName)?.rowCount || 0,
             isLoading: false,
           });
+          
+          // 选中表后自动执行查询
+          executeQuery(`SELECT * FROM \`${tableName}\` LIMIT 100`);
         }
       } catch (error) {
         set({ error: '加载表结构失败', isLoading: false });
@@ -382,6 +385,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         tableRowCount: info.rowCount,
         isLoading: false,
       });
+      
+      // SQLite 选中表后自动执行查询
+      executeQuery(`SELECT * FROM \`${tableName}\` LIMIT 100`);
     }
   },
   

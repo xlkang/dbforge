@@ -20,7 +20,8 @@ export function SchemaPanel() {
     isLoading,
     selectTable,
     executeQuery,
-    loadTables 
+    loadTables,
+    setQuery,
   } = useDatabaseStore();
   const { addTab } = useTabStore();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
@@ -126,6 +127,67 @@ export function SchemaPanel() {
         alert(`删除索引失败: ${err}`);
       }
     }
+  };
+
+  // 字段右键菜单
+  const handleColumnContextMenu = (e: React.MouseEvent, columnName: string) => {
+    e.preventDefault();
+    const items: MenuItem[] = [
+      {
+        label: '复制字段名',
+        onClick: () => {
+          navigator.clipboard.writeText(columnName);
+          addToast(`已复制: ${columnName}`, 'success');
+        },
+      },
+      {
+        label: '复制 SELECT 语句',
+        onClick: () => {
+          const sql = `SELECT \`${columnName}\` FROM \`${selectedTable}\` LIMIT 100`;
+          navigator.clipboard.writeText(sql);
+          addToast('已复制 SELECT 语句', 'success');
+        },
+      },
+      { label: '', onClick: () => {}, divider: true },
+      {
+        label: '查看该字段数据',
+        onClick: () => {
+          setQuery(`SELECT \`${columnName}\` FROM \`${selectedTable}\` LIMIT 100`);
+          executeQuery(`SELECT \`${columnName}\` FROM \`${selectedTable}\` LIMIT 100`);
+        },
+      },
+      {
+        label: '查看非空值',
+        onClick: () => {
+          setQuery(`SELECT \`${columnName}\` FROM \`${selectedTable}\` WHERE \`${columnName}\` IS NOT NULL LIMIT 100`);
+          executeQuery(`SELECT \`${columnName}\` FROM \`${selectedTable}\` WHERE \`${columnName}\` IS NOT NULL LIMIT 100`);
+        },
+      },
+      { label: '', onClick: () => {}, divider: true },
+      {
+        label: '按该字段排序（ DESC）',
+        onClick: () => {
+          const currentQuery = useDatabaseStore.getState().query;
+          if (currentQuery.includes('ORDER BY')) {
+            setQuery(currentQuery.replace(/ORDER BY .*?(ASC|DESC)?/i, `ORDER BY \`${columnName}\` DESC`));
+          } else {
+            setQuery(currentQuery + ` ORDER BY \`${columnName}\` DESC`);
+          }
+        },
+      },
+      {
+        label: '按该字段排序（ ASC）',
+        onClick: () => {
+          const currentQuery = useDatabaseStore.getState().query;
+          if (currentQuery.includes('ORDER BY')) {
+            setQuery(currentQuery.replace(/ORDER BY .*?(ASC|DESC)?/i, `ORDER BY \`${columnName}\` ASC`));
+          } else {
+            setQuery(currentQuery + ` ORDER BY \`${columnName}\` ASC`);
+          }
+        },
+      },
+    ];
+    showContextMenu(e, items);
   };
 
   if (!connection) {
@@ -237,7 +299,11 @@ export function SchemaPanel() {
                       </div>
                       <div className="space-y-1.5">
                         {tableColumns.map(col => (
-                          <div key={col.name} className="flex items-center gap-2 text-sm group/col">
+                          <div 
+                            key={col.name} 
+                            className="flex items-center gap-2 text-sm group/col"
+                            onContextMenu={(e) => handleColumnContextMenu(e, col.name)}
+                          >
                             {col.pk ? (
                               <Key className="w-3.5 h-3.5 text-yellow-500/70" strokeWidth={2} />
                             ) : (

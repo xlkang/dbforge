@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useDatabaseStore } from './stores/databaseStore';
 import { useTabStore } from './stores/tabStore';
 import { DatabasePanel } from './components/connection/DatabasePanel';
@@ -20,7 +20,6 @@ import { Toolbar } from './components/layout/Toolbar';
 
 function App() {
   const connection = useDatabaseStore((s) => s.connection);
-  const { tabs } = useTabStore();
   const loadTables = useDatabaseStore((s) => s.loadTables);
   
   // 自动重连：页面加载时如果存在保存的连接，自动加载表结构
@@ -29,6 +28,46 @@ function App() {
       loadTables();
     }
   }, []);
+  
+  // 全局键盘快捷键
+  const { addTab, removeTab, setActiveTab, tabs, activeTabId } = useTabStore();
+  const setQuery = useDatabaseStore((s) => s.setQuery);
+  
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Ctrl+N: 新建查询标签
+    if (e.ctrlKey && e.key === 'n') {
+      e.preventDefault();
+      addTab({ title: '新查询', type: 'query' });
+    }
+    // Ctrl+W: 关闭当前标签
+    if (e.ctrlKey && e.key === 'w') {
+      e.preventDefault();
+      if (activeTabId) {
+        removeTab(activeTabId);
+      }
+    }
+    // Ctrl+Tab: 切换标签
+    if (e.ctrlKey && e.key === 'Tab') {
+      e.preventDefault();
+      const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+      const nextIndex = e.shiftKey 
+        ? (currentIndex - 1 + tabs.length) % tabs.length 
+        : (currentIndex + 1) % tabs.length;
+      if (tabs[nextIndex]) {
+        setActiveTab(tabs[nextIndex].id);
+      }
+    }
+    // Ctrl+L: 清空编辑器
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      setQuery('');
+    }
+  }, [addTab, removeTab, setActiveTab, activeTabId, tabs, setQuery]);
+  
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
   
   const dbType = connection?.type || 'sqlite';
   const dbName = connection?.name || '';
