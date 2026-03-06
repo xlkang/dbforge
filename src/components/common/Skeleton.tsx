@@ -1,88 +1,116 @@
-import React, { memo } from 'react';
-
+// 骨架屏加载效果组件
 interface SkeletonProps {
+  className?: string;
+  variant?: 'text' | 'circular' | 'rectangular';
   width?: string | number;
   height?: string | number;
-  borderRadius?: string;
-  className?: string;
+  animation?: 'pulse' | 'wave' | 'none';
 }
 
-export const Skeleton: React.FC<SkeletonProps> = memo(({ 
-  width = '100%', 
-  height = '20px', 
-  borderRadius = '4px',
-  className = ''
-}) => {
+export function Skeleton({ 
+  className = '', 
+  variant = 'rectangular', 
+  width, 
+  height, 
+  animation = 'pulse' 
+}: SkeletonProps) {
+  const baseClasses = 'bg-[var(--bg-hover)]';
+  
+  const variantClasses = {
+    text: 'rounded',
+    circular: 'rounded-full',
+    rectangular: 'rounded-md',
+  };
+  
+  const animationClasses = {
+    pulse: 'animate-pulse',
+    wave: 'skeleton-wave',
+    none: '',
+  };
+  
+  const style: React.CSSProperties = {
+    width: width || '100%',
+    height: height || '1rem',
+  };
+  
   return (
     <div 
-      className={`animate-pulse bg-gray-200 dark:bg-[var(--bg-tertiary)] ${className}`}
-      style={{ 
-        width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
-        borderRadius,
-      }}
+      className={`${baseClasses} ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
+      style={style}
     />
   );
-});
+}
 
-export const TableSkeleton: React.FC<{ rows?: number }> = memo(({ rows = 5 }) => {
+// 表格式骨架屏
+export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="w-full">
-      <div className="flex gap-2 mb-4">
-        <Skeleton width={80} height={32} />
-        <Skeleton width={80} height={32} />
-        <Skeleton width={80} height={32} />
-      </div>
-      <div className="space-y-2">
-        {/* Header */}
-        <div className="flex gap-4 p-3 bg-gray-100 dark:bg-[var(--bg-secondary)] rounded">
-          <Skeleton width={100} />
-          <Skeleton width={100} />
-          <Skeleton width={80} />
-          <Skeleton width={60} />
-        </div>
-        {/* Rows */}
-        {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="flex gap-4 p-3">
-            <Skeleton width={100} />
-            <Skeleton width={100} />
-            <Skeleton width={80} />
-            <Skeleton width={60} />
-          </div>
+    <div className="w-full space-y-2">
+      {/* 表头 */}
+      <div className="flex gap-2">
+        {Array.from({ length: columns }).map((_, i) => (
+          <Skeleton key={`header-${i}`} height="32px" className="flex-1" />
         ))}
       </div>
-    </div>
-  );
-});
-
-export const SchemaSkeleton: React.FC = memo(() => {
-  return (
-    <div className="space-y-3 p-2">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <Skeleton width={16} height={16} borderRadius="50%" />
-          <Skeleton width="60%" height={16} />
-        </div>
-      ))}
-    </div>
-  );
-});
-
-export const QueryResultSkeleton: React.FC = memo(() => {
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-1">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} height={28} className="flex-1" />
-        ))}
-      </div>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex gap-1">
-          {Array.from({ length: 5 }).map((_, j) => (
-            <Skeleton key={j} height={24} className="flex-1" />
+      {/* 表行 */}
+      {Array.from({ length: rows }).map((_, rowIndex) => (
+        <div key={`row-${rowIndex}`} className="flex gap-2">
+          {Array.from({ length: columns }).map((_, colIndex) => (
+            <Skeleton key={`cell-${rowIndex}-${colIndex}`} height="28px" className="flex-1" />
           ))}
         </div>
       ))}
     </div>
   );
-});
+}
+
+// 卡片骨架屏
+export function CardSkeleton({ lines = 3 }: { lines?: number }) {
+  return (
+    <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)] p-4 space-y-3">
+      <Skeleton height="24px" width="60%" />
+      {Array.from({ length: lines }).map((_, i) => (
+        <Skeleton key={i} height="16px" />
+      ))}
+    </div>
+  );
+}
+
+// 列表骨架屏
+export function ListSkeleton({ items = 5 }: { items?: number }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: items }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-2">
+          <Skeleton variant="circular" width={32} height={32} />
+          <div className="flex-1 space-y-1">
+            <Skeleton height="14px" width="40%" />
+            <Skeleton height="12px" width="60%" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 内容区域骨架屏
+export function ContentSkeleton() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex justify-between items-center">
+        <Skeleton height="28px" width="200px" />
+        <Skeleton height="36px" width="100px" />
+      </div>
+      <TableSkeleton rows={8} columns={5} />
+    </div>
+  );
+}
+
+// Schema 面板骨架屏
+export function SchemaSkeleton() {
+  return (
+    <div className="p-2 space-y-2">
+      <Skeleton height="20px" width="80px" />
+      <ListSkeleton items={8} />
+    </div>
+  );
+}
