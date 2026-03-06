@@ -12,7 +12,15 @@ app.use(express.json());
 const pools = new Map();
 
 // 创建连接池
-async function getPool(config) {
+interface PoolConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+}
+
+async function getPool(config: PoolConfig) {
   const key = `${config.host}:${config.port}:${config.database}`;
   
   if (!pools.has(key)) {
@@ -38,7 +46,7 @@ app.post('/api/connect', async (req, res) => {
     const connection = await pool.getConnection();
     connection.release();
     res.json({ success: true, message: '连接成功' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -56,7 +64,7 @@ app.post('/api/tables', async (req, res) => {
     `, [database]);
     
     res.json({ success: true, tables });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -87,7 +95,7 @@ app.post('/api/schema', async (req, res) => {
     `, []);
     
     res.json({ success: true, columns, indexes });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -105,7 +113,7 @@ app.post('/api/query', async (req, res) => {
       rows: Array.isArray(rows) ? rows : [rows],
       fields: fields || []
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -119,7 +127,7 @@ app.post('/api/count', async (req, res) => {
     const [[{ count }]] = await pool.query(`SELECT COUNT(*) as count FROM \`${table}\``);
     
     res.json({ success: true, count });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -139,7 +147,7 @@ app.post('/api/views', async (req, res) => {
     `, [database]);
     
     res.json({ success: true, views });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -162,7 +170,7 @@ app.post('/api/triggers', async (req, res) => {
     `, [database]);
     
     res.json({ success: true, triggers });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
@@ -218,7 +226,7 @@ app.post('/api/export', async (req, res) => {
     sqlDump += `SET FOREIGN_KEY_CHECKS=1;\n`;
     
     res.json({ success: true, sql: sqlDump });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
