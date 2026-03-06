@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useConnectionStore, type MySQLConnection } from '../../stores/connectionStore';
+import { useDatabaseStore } from '../../stores/databaseStore';
 
 interface ConnectionModalProps {
   isOpen: boolean;
@@ -9,6 +10,9 @@ interface ConnectionModalProps {
 
 export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionModalProps) {
   const { addConnection, updateConnection } = useConnectionStore();
+  const { setConnection, setError } = useDatabaseStore();
+  const [connecting, setConnecting] = useState(false);
+  
   const [form, setForm] = useState<Omit<MySQLConnection, 'id'>>({
     name: editConnection?.name || '',
     host: editConnection?.host || 'localhost',
@@ -18,14 +22,52 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
     database: editConnection?.database || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editConnection) {
-      updateConnection(editConnection.id, form);
-    } else {
-      addConnection(form);
+    setConnecting(true);
+    setError(null);
+
+    try {
+      // 测试连接
+      const res = await fetch('http://localhost:3001/api/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      
+      if (!data.success) {
+        setError(data.message || '连接失败');
+        setConnecting(false);
+        return;
+      }
+
+      // 保存连接配置
+      if (editConnection) {
+        updateConnection(editConnection.id, form);
+      } else {
+        addConnection(form);
+      }
+
+      // 实际连接数据库
+      setConnection({
+        id: editConnection?.id || crypto.randomUUID(),
+        type: 'mysql',
+        name: form.name || form.database,
+        host: form.host,
+        port: form.port,
+        user: form.user,
+        password: form.password,
+        database: form.database,
+        isConnected: true,
+      });
+      
+      onClose();
+    } catch (err) {
+      setError('无法连接到服务器，请确保后端服务已启动');
+    } finally {
+      setConnecting(false);
     }
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -118,9 +160,10 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+              disabled={connecting}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors"
             >
-              {editConnection ? '保存' : '连接'}
+              {connecting ? '连接中...' : (editConnection ? '保存' : '连接')}
             </button>
           </div>
         </form>
