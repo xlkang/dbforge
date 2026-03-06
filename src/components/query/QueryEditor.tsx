@@ -1,16 +1,54 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
-import { sql, SQLite } from '@codemirror/lang-sql';
+import { autocompletion } from '@codemirror/autocomplete';
+import { sql, SQLite, MySQL } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { QueryHistory } from './QueryHistory';
 import { formatSQL } from '../../lib/sqlFormatter';
 
-export function QueryEditor() {
+interface QueryEditorProps {
+  initialSql?: string;
+  tabId?: string;
+}
+
+export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { query, setQuery, executeQuery, connection, isExecuting } = useDatabaseStore();
+  const [localQuery, setLocalQuery] = useState(initialSql || '');
+  
+  const globalQuery = useDatabaseStore((s) => s.query);
+  const globalSetQuery = useDatabaseStore((s) => s.setQuery);
+  const { executeQuery, connection, isExecuting, tableColumns, tables } = useDatabaseStore();
+
+  // Use local state for tabbed editors, global state for legacy
+  const query = tabId ? localQuery : globalQuery;
+  const setQuery = tabId ? setLocalQuery : globalSetQuery;
+
+  // Build schema from current database tables (CodeMirror format)
+  const getSchema = () => {
+    const schema: Record<string, string[]> = {};
+    
+    // Add tables with their columns
+    tables.forEach(table => {
+      const fields = tableColumns
+        .filter(col => (col as any).table === table.name || col.name)
+        .map(col => col.name);
+      
+      schema[table.name] = fields;
+    });
+
+    return schema;
+  };
+
+  // Custom SQL dialect based on connection type
+  const getDialect = () => {
+    if (connection?.type === 'mysql') {
+      return MySQL;
+    }
+    return SQLite;
+  };
 
   // Initialize CodeMirror
   useEffect(() => {
@@ -34,8 +72,17 @@ export function QueryEditor() {
         highlightActiveLine(),
         highlightActiveLineGutter(),
         historyKeymap,
-        sql({ dialect: SQLite }),
+        sql({ 
+          dialect: getDialect(),
+          schema: getSchema() as any,
+          defaultTable: tables[0]?.name
+        }),
         oneDark,
+        autocompletion({
+          defaultKeymap: true,
+          activateOnTyping: true,
+          maxRenderedOptions: 20,
+        }),
         executeKeymap,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -45,7 +92,18 @@ export function QueryEditor() {
         EditorView.theme({
           '&': { height: '100%' },
           '.cm-scroller': { overflow: 'auto' },
-          '.cm-content': { fontFamily: 'monospace', fontSize: '14px' }
+          '.cm-content': { fontFamily: 'monospace', fontSize: '14px' },
+          '.cm-tooltip-autocomplete': {
+            backgroundColor: '#1f2937',
+            border: '1px solid #374151',
+          },
+          '.cm-completionLabel': { color: '#d1d5db' },
+          '.cm-completionMatchedText': { color: '#60a5fa', textDecoration: 'none' },
+          '.cm-tooltip.cm-completionInfo': {
+            backgroundColor: '#111827',
+            borderLeft: '1px solid #374151',
+            color: '#9ca3af',
+          }
         })
       ]
     });
@@ -60,7 +118,7 @@ export function QueryEditor() {
     return () => {
       view.destroy();
     };
-  }, []);
+  }, []); // Empty deps - only init once
 
   // Update editor content when query changes externally
   useEffect(() => {

@@ -24,6 +24,9 @@ interface DatabaseState {
   isExecuting: boolean;
   queryError: string | null;
   
+  // Data editing
+  executeUpdate: (sql: string) => Promise<number>;
+  
   // Actions
   openDatabase: (file: File) => Promise<void>;
   setConnection: (conn: DatabaseConnection) => void;
@@ -305,4 +308,37 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   clearHistory: () => set({ queryHistory: [] }),
   
   setError: (error: string | null) => set({ error }),
+  
+  executeUpdate: async (sql: string) => {
+    const { connection } = get();
+    
+    try {
+      if (connection?.type === 'mysql') {
+        const res = await fetch(`${API_BASE}/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            host: connection.host,
+            port: connection.port,
+            user: connection.user,
+            password: connection.password,
+            database: connection.database,
+            sql,
+          }),
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+        
+        return data.affectedRows || 0;
+      } else {
+        const result = db.executeQuery(sql);
+        return result.affectedRows;
+      }
+    } catch (error) {
+      throw error;
+    }
+  },
 }));

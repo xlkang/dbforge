@@ -1,4 +1,5 @@
 import { useDatabaseStore } from './stores/databaseStore';
+import { useTabStore } from './stores/tabStore';
 import { DatabasePanel } from './components/connection/DatabasePanel';
 import { SchemaPanel } from './components/schema/SchemaPanel';
 import { QueryEditor } from './components/query/QueryEditor';
@@ -9,13 +10,17 @@ import { ExportPanel } from './components/export/ExportPanel';
 import { StatusBar } from './components/layout/StatusBar';
 import { ThemeToggle } from './components/layout/ThemeToggle';
 import { ShortcutsPanel } from './components/layout/ShortcutsPanel';
+import { TabBar } from './components/tabs/TabBar';
+import { TabContent } from './components/tabs/TabContent';
 
 function App() {
   const connection = useDatabaseStore((s) => s.connection);
+  const { tabs } = useTabStore();
+  
   const dbType = connection?.type || 'sqlite';
   const dbName = connection?.name || '';
-  
   const typeLabel = dbType === 'mysql' ? 'MySQL' : 'SQLite';
+  const hasTabs = tabs.length > 0;
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-gray-100">
@@ -46,18 +51,26 @@ function App() {
 
         {/* Main Area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Query Editor */}
-          <div className="h-56 border-b border-gray-700 shrink-0 overflow-hidden">
-            <QueryEditor />
-          </div>
+          {/* Tab Bar */}
+          {hasTabs && <TabBar />}
 
-          {/* Results */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-gray-900">
-            <div className="flex-1 overflow-hidden">
-              <DataViewer />
-            </div>
-            <TableEditor />
-          </div>
+          {/* Content: Tabs or Legacy */}
+          {hasTabs ? (
+            <TabContent />
+          ) : (
+            <>
+              {/* Legacy layout for backward compatibility */}
+              <div className="h-56 border-b border-gray-700 shrink-0 overflow-hidden">
+                <QueryEditor />
+              </div>
+              <div className="flex-1 flex flex-col overflow-hidden bg-gray-900">
+                <div className="flex-1 overflow-hidden">
+                  <DataViewer />
+                </div>
+                <TableEditor />
+              </div>
+            </>
+          )}
         </main>
       </div>
 

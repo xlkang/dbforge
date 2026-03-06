@@ -1,4 +1,6 @@
 import { useDatabaseStore } from '../../stores/databaseStore';
+import { useTabStore } from '../../stores/tabStore';
+import { useContextMenu, type MenuItem } from '../common/ContextMenu';
 import { CreateTableModal } from './CreateTableModal';
 
 export function SchemaPanel() {
@@ -9,8 +11,59 @@ export function SchemaPanel() {
     tableColumns, 
     tableIndexes, 
     tableRowCount,
-    selectTable 
+    selectTable,
+    executeQuery,
+    loadTables 
   } = useDatabaseStore();
+  const { addTab } = useTabStore();
+  const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
+
+  const handleDoubleClick = (tableName: string) => {
+    addTab({
+      title: tableName,
+      type: 'table',
+      tableName,
+    });
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, tableName: string) => {
+    const items: MenuItem[] = [
+      {
+        label: '打开',
+        onClick: () => {
+          addTab({ title: tableName, type: 'table', tableName });
+        },
+      },
+      {
+        label: '查看数据',
+        onClick: () => selectTable(tableName),
+      },
+      { label: '', onClick: () => {}, divider: true },
+      {
+        label: '重命名',
+        onClick: () => {
+          const newName = prompt('输入新表名:', tableName);
+          if (newName && newName !== tableName) {
+            executeQuery(`ALTER TABLE \`${tableName}\` RENAME TO \`${newName}\``).then(() => {
+              loadTables();
+            });
+          }
+        },
+      },
+      {
+        label: '删除',
+        danger: true,
+        onClick: () => {
+          if (confirm(`确定要删除表 "${tableName}" 吗？此操作不可恢复！`)) {
+            executeQuery(`DROP TABLE \`${tableName}\``).then(() => {
+              loadTables();
+            });
+          }
+        },
+      },
+    ];
+    showContextMenu(e, items);
+  };
 
   if (!connection) {
     return (
@@ -36,6 +89,8 @@ export function SchemaPanel() {
               <div key={table.name}>
                 <button
                   onClick={() => selectTable(table.name)}
+                  onDoubleClick={() => handleDoubleClick(table.name)}
+                  onContextMenu={(e) => handleContextMenu(e, table.name)}
                   className={`w-full text-left px-3 py-2 rounded flex items-center justify-between ${
                     selectedTable === table.name 
                       ? 'bg-blue-600 text-white' 
@@ -91,6 +146,34 @@ export function SchemaPanel() {
           </div>
         )}
       </div>
+
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 min-w-[160px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {contextMenu.items.map((item, index) =>
+            item.divider ? (
+              <div key={index} className="my-1 border-t border-gray-700" />
+            ) : (
+              <button
+                key={index}
+                onClick={() => {
+                  item.onClick();
+                  hideContextMenu();
+                }}
+                className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                  item.danger
+                    ? 'text-red-400 hover:bg-red-900/30'
+                    : 'text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                {item.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }
