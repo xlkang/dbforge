@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { ImportCSVModal } from '../data/ImportCSVModal';
+import { ExportModal } from './ExportModal';
 
 type ExportFormat = 'csv' | 'json';
 
 export function ExportPanel() {
-  const { queryResult, selectedTable } = useDatabaseStore();
+  const { queryResult, selectedTable, tables, connection } = useDatabaseStore();
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const handleExport = async (format: ExportFormat) => {
     if (!queryResult || !queryResult.isSelect || queryResult.rows.length === 0) {
@@ -79,6 +81,21 @@ export function ExportPanel() {
         </button>
       </div>
       <ImportCSVModal />
+      
+      {/* Database Export */}
+      {connection && tables.length > 0 && (
+        <>
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="w-full px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+          >
+            导出数据库
+          </button>
+          {showExportModal && (
+            <ExportModal onClose={() => setShowExportModal(false)} />
+          )}
+        </>
+      )}
     </div>
   );
 }

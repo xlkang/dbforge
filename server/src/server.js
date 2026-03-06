@@ -167,6 +167,62 @@ app.post('/api/triggers', async (req, res) => {
   }
 });
 
+// 导出数据库
+app.post('/api/export', async (req, res) => {
+  try {
+    const { host, port, user, password, database } = req.body;
+    const pool = await getPool({ host, port, user, password, database });
+    
+    let sqlDump = '';
+    
+    // Header
+    sqlDump += `-- DBForge MySQL Dump\n`;
+    sqlDump += `-- Generated: ${new Date().toISOString()}\n`;
+    sqlDump += `-- Database: ${database}\n\n`;
+    sqlDump += `SET FOREIGN_KEY_CHECKS=0;\n\n`;
+    
+    // Get all tables
+    const [tables] = await pool.query(`SHOW TABLES`);
+    const tablesList = tables as any[];
+    
+    for (const tableRow of tablesList) {
+      const tableName = tableRow[`Tables_in_${database}`];
+      
+      // Get create table statement
+      const [createResult] = await pool.query(`SHOW CREATE TABLE \`${tableName}\``);
+      if (createResult[0]) {
+        sqlDump += `\n-- Table: ${tableName}\n`;
+        sqlDump += `DROP TABLE IF EXISTS \`${tableName}\`;\n`;
+        sqlDump += `${createResult[0]['Create Table']};\n\n`;
+      }
+      
+      // Get table data
+      const [dataResult] = await pool.query(`SELECT * FROM \`${tableName}\``);
+      const dataList = dataResult as any[];
+      
+      if (dataList.length > 0) {
+        const columns = Object.keys(dataList[0]).map(col => `\`${col}\``).join(', ');
+        
+        for (const row of dataList) {
+          const values = Object.values(row).map(val => {
+            if (val === null) return 'NULL';
+            if (typeof val === 'number') return val;
+            return `'${String(val).replace(/'/g, "''")}'`;
+          }).join(', ');
+          sqlDump += `INSERT INTO \`${tableName}\` (${columns}) VALUES (${values});\n`;
+        }
+        sqlDump += '\n';
+      }
+    }
+    
+    sqlDump += `SET FOREIGN_KEY_CHECKS=1;\n`;
+    
+    res.json({ success: true, sql: sqlDump });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 DBForge Server running on http://localhost:${PORT}`);
 });
