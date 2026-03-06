@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Dark theme (default) */
+:root, .dark {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --border-color: #374151;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --error: #ef4444;
+  --success: #22c55e;
+}
+
+:root, .light {
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --error: #dc2626;
+  --success: #16a34a;
+}
+
+/* Apply theme variables */
+.dark {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.light {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Override Tailwind classes for light theme */
+.light .bg-gray-900 { background-color: var(--bg-primary); }
+.light .bg-gray-800 { background-color: var(--bg-secondary); }
+.light .bg-gray-700 { background-color: var(--bg-tertiary); }
+.light .text-gray-100 { color: var(--text-primary); }
+.light .text-gray-200 { color: var(--text-primary); }
+.light .text-gray-300 { color: var(--text-secondary); }
+.light .text-gray-400 { color: var(--text-muted); }
+.light .text-gray-500 { color: var(--text-muted); }
+.light .border-gray-700 { border-color: var(--border-color); }
+.light .border-gray-600 { border-color: var(--border-color); }
