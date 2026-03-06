@@ -4,6 +4,7 @@ import { useTabStore } from '../../stores/tabStore';
 import { useContextMenu, type MenuItem } from '../common/ContextMenu';
 import { CreateTableModal } from './CreateTableModal';
 import { IndexModal } from './IndexModal';
+import { SchemaSkeleton } from '../common/Skeleton';
 
 export function SchemaPanel() {
   const { 
@@ -13,6 +14,7 @@ export function SchemaPanel() {
     tableColumns, 
     tableIndexes, 
     tableRowCount,
+    isLoading,
     selectTable,
     executeQuery,
     loadTables 
@@ -136,6 +138,10 @@ export function SchemaPanel() {
                 
                 {selectedTable === table.name && (
                   <div className="ml-4 mt-2 space-y-4">
+                    {isLoading ? (
+                      <SchemaSkeleton />
+                    ) : (
+                      <>
                     {/* Columns */}
                     <div>
                       <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Columns</h4>
@@ -198,6 +204,8 @@ export function SchemaPanel() {
                           + 创建索引
                         </button>
                       </div>
+                    )}
+                      </>
                     )}
                   </div>
                 )}

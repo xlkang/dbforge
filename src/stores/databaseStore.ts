@@ -8,6 +8,7 @@ interface DatabaseState {
   // Connection state
   connection: DatabaseConnection | null;
   isConnecting: boolean;
+  isLoading: boolean; // 新增：表结构加载状态
   error: string | null;
   
   // Schema state
@@ -46,6 +47,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   // Initial state
   connection: null,
   isConnecting: false,
+  isLoading: false,
   error: null,
   
   tables: [],
@@ -231,7 +233,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   selectTable: async (tableName: string) => {
     const { connection } = get();
     
-    set({ selectedTable: tableName, query: `SELECT * FROM \`${tableName}\` LIMIT 100` });
+    set({ selectedTable: tableName, query: `SELECT * FROM \`${tableName}\` LIMIT 100`, isLoading: true });
     
     if (connection?.type === 'mysql') {
       // 加载 MySQL 表结构
@@ -278,10 +280,11 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
             tableColumns: columns, 
             tableIndexes: indexes,
             tableRowCount: get().tables.find(t => t.name === tableName)?.rowCount || 0,
+            isLoading: false,
           });
         }
       } catch (error) {
-        set({ error: '加载表结构失败' });
+        set({ error: '加载表结构失败', isLoading: false });
       }
     } else {
       // SQLite
@@ -291,6 +294,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         tableColumns: info.columns,
         tableIndexes: indexes,
         tableRowCount: info.rowCount,
+        isLoading: false,
       });
     }
   },
