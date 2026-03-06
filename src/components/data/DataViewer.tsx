@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { ChartPanel } from './ChartPanel';
 import { Virtuoso } from 'react-virtuoso';
 import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
@@ -53,6 +54,8 @@ export function DataViewer({ tableName }: DataViewerProps) {
       </div>
     );
   }
+
+  const [showChart, setShowChart] = useState(false);
 
   if (!queryResult) return null;
 
@@ -153,6 +156,15 @@ export function DataViewer({ tableName }: DataViewerProps) {
           <X className="w-4 h-4" />
           清除结果
         </button>
+        {isSelect && columns.length > 0 && rows.length > 0 && (
+          <button
+            onClick={() => setShowChart(!showChart)}
+            className="mt-4 ml-2 flex items-center gap-2 px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-lg transition-colors border border-[var(--border-color)]"
+          >
+            <BarChart3 className="w-4 h-4" />
+            {showChart ? '隐藏图表' : '查看图表'}
+          </button>
+        )}
       </div>
     );
   }
@@ -576,6 +588,11 @@ export function DataViewer({ tableName }: DataViewerProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Chart View */}
+      {showChart && isSelect && columns.length > 0 && rows.length > 0 && (
+        <ChartPanel columns={columns} rows={rows} onClose={() => setShowChart(false)} />
       )}
     </div>
   );
