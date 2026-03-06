@@ -25,13 +25,14 @@ function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const connection = useDatabaseStore((s) => s.connection);
   const loadTables = useDatabaseStore((s) => s.loadTables);
+  const connectionType = connection?.type;
   
   // 自动重连：页面加载时如果存在保存的连接，自动加载表结构
   useEffect(() => {
-    if (connection?.type === 'mysql') {
+    if (connectionType === 'mysql') {
       loadTables();
     }
-  }, [loadTables]);
+  }, [connectionType, loadTables]);
   
   // 全局键盘快捷键
   const { addTab, removeTab, setActiveTab, tabs, activeTabId } = useTabStore();

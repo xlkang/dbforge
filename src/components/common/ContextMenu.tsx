@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import type { MenuItem } from './ContextMenuHooks';
-import { useContextMenu } from './ContextMenuHooks';
 
 interface ContextMenuProps {
   items: MenuItem[];
@@ -80,5 +79,4 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
   );
 }
 
-export { useContextMenu };
 export type { MenuItem };

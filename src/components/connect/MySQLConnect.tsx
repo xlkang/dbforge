@@ -69,7 +69,7 @@ export function MySQLConnect() {
         database: form.database,
         isConnected: true,
       });
-    } catch (err) {
+    } catch {
       setError('无法连接到服务器 (http://localhost:3001)，请确保后端服务已启动：npm run server');
     } finally {
       setConnecting(false);

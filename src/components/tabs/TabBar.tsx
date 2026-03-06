@@ -1,6 +1,8 @@
 import { Plus, X, Table2, Code, Network, FileText } from 'lucide-react';
 import { useTabStore } from '../../stores/tabStore';
-import { ContextMenu, type MenuItem, useContextMenu } from '../common/ContextMenu';
+import { ContextMenu } from '../common/ContextMenu';
+import type { MenuItem } from '../common/ContextMenuHooks';
+import { useContextMenu } from '../common/ContextMenuHooks';
 
 const TabIcon = ({ type }: { type: string }) => {
   switch (type) {

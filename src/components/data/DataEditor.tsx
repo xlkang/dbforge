@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface EditableCellProps {
-  value: any;
+  value: unknown;
   column: string;
   rowIndex: number;
-  onSave: (column: string, rowIndex: number, newValue: any) => void;
+  onSave: (column: string, rowIndex: number, newValue: unknown) => void;
   onCancel: () => void;
 }
 
@@ -41,22 +41,22 @@ export function EditableCell({ value, column, rowIndex, onSave, onCancel }: Edit
 export interface EditedRow {
   rowIndex: number;
   column: string;
-  originalValue: any;
-  newValue: any;
+  originalValue: unknown;
+  newValue: unknown;
 }
 
 export interface DataEditorProps {
   columns: string[];
-  rows: any[];
-  onSaveChanges: (updates: EditedRow[], deletedRows: number[], newRows?: any[]) => Promise<void>;
+  rows: Record<string, unknown>[];
+  onSaveChanges: (updates: EditedRow[], deletedRows: number[], newRows?: Record<string, unknown>[]) => Promise<void>;
   onRefresh: () => void;
 }
 
 export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEditorProps) {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [editingCell, setEditingCell] = useState<{ row: number; col: string } | null>(null);
-  const [editedValues, setEditedValues] = useState<Map<string, any>>(new Map());
-  const [newRows, setNewRows] = useState<any[]>([]); // New empty rows
+  const [editedValues, setEditedValues] = useState<Map<string, unknown>>(new Map());
+  const [newRows, setNewRows] = useState<Record<string, unknown>[]>([]); // New empty rows
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -129,7 +129,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
     setHasChanges(true);
   };
 
-  const handleNewRowChange = (rowIndex: number, column: string, value: any) => {
+  const handleNewRowChange = (rowIndex: number, column: string, value: unknown) => {
     setNewRows(prev => {
       const updated = [...prev];
       updated[rowIndex] = { ...updated[rowIndex], [column]: value };
@@ -271,7 +271,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
                   >
                     <input
                       type="text"
-                      value={newRow[col] ?? ''}
+                      value={String(newRow[col] ?? '')}
                       onChange={(e) => handleNewRowChange(rowIndex, col, e.target.value || null)}
                       className="w-full px-2 py-1 bg-green-900/30 text-green-300 border border-green-700 rounded font-mono text-sm focus:outline-none focus:border-green-500"
                       placeholder="NULL"

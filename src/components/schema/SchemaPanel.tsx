@@ -3,7 +3,8 @@ import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, 
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useToastStore } from '../../stores/toastStore';
-import { useContextMenu, type MenuItem } from '../common/ContextMenu';
+import { useContextMenu } from '../common/ContextMenuHooks';
+import type { MenuItem } from '../common/ContextMenuHooks';
 import { SchemaSkeleton } from '../common/Skeleton';
 
 // Lazy load modals for better bundle size
