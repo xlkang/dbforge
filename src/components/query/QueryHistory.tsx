@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { History, ChevronDown, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
+import { History, ChevronDown, ChevronRight, Trash2, RotateCcw, Search } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
 export function QueryHistory() {
   const { queryHistory, setQuery, clearHistory } = useDatabaseStore();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredHistory = queryHistory.filter(q => 
+    q.toLowerCase().includes(search.toLowerCase())
+  );
 
   if (queryHistory.length === 0) return null;
 
@@ -12,40 +17,50 @@ export function QueryHistory() {
     <div className="border-t border-gray-800 bg-gray-900/50">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-2.5 flex items-center justify-between text-sm text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-colors"
+        className="w-full flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-gray-200"
       >
-        <div className="flex items-center gap-2">
-          <History className="w-4 h-4" strokeWidth={2} />
-          <span className="font-medium">查询历史</span>
-          <span className="text-xs bg-gray-800 px-1.5 py-0.5 rounded text-gray-500">{queryHistory.length}</span>
-        </div>
-        {isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-gray-600" strokeWidth={2} />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" strokeWidth={2} />
-        )}
+        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <History size={14} />
+        <span className="text-xs">查询历史 ({queryHistory.length})</span>
       </button>
-      
+
       {isExpanded && (
-        <div className="max-h-48 overflow-auto border-t border-gray-800">
-          {queryHistory.slice().reverse().map((query, idx) => (
+        <div className="border-t border-gray-800">
+          <div className="px-4 py-2 border-b border-gray-800">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="搜索历史记录..."
+                className="w-full bg-gray-800/50 text-gray-300 text-xs px-9 py-1.5 rounded outline-none focus:ring-1 focus:ring-blue-500/50"
+              />
+            </div>
+          </div>
+          <div className="max-h-48 overflow-auto">
+            {filteredHistory.slice().reverse().map((query, idx) => (
+              <div
+                key={idx}
+                className="group flex items-start gap-2 px-4 py-2 hover:bg-gray-800/50 cursor-pointer border-b border-gray-800/50"
+                onClick={() => setQuery(query)}
+              >
+                <RotateCcw size={12} className="text-gray-600 mt-0.5 flex-shrink-0" />
+                <code className="text-xs text-gray-400 font-mono truncate flex-1">{query}</code>
+              </div>
+            ))}
+            {filteredHistory.length === 0 && search && (
+              <div className="px-4 py-3 text-xs text-gray-500">没有匹配的历史记录</div>
+            )}
+          </div>
+          <div className="px-4 py-2 border-t border-gray-800 flex justify-end">
             <button
-              key={idx}
-              onClick={() => setQuery(query)}
-              className="w-full px-4 py-2.5 text-left text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 font-mono flex items-center gap-2 group transition-colors"
-              title={query}
+              onClick={clearHistory}
+              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
             >
-              <RotateCcw className="w-3 h-3 text-gray-700 group-hover:text-gray-500 shrink-0" strokeWidth={2} />
-              <span className="truncate">{query.length > 60 ? query.slice(0, 60) + '...' : query}</span>
+              <Trash2 size={12} /> 清空历史
             </button>
-          ))}
-          <button
-            onClick={clearHistory}
-            className="w-full px-4 py-2.5 text-left text-xs text-red-400/70 hover:text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-gray-800"
-          >
-            <Trash2 className="w-3 h-3" strokeWidth={2} />
-            清空历史记录
-          </button>
+          </div>
         </div>
       )}
     </div>
