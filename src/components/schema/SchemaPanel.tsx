@@ -404,7 +404,7 @@ export function SchemaPanel() {
               <button
                 key={index}
                 onClick={() => {
-                  item.onClick();
+                  item.onClick?.();
                   hideContextMenu();
                 }}
                 className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2.5 transition-colors ${

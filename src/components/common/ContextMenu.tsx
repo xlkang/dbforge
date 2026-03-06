@@ -1,12 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-
-export interface MenuItem {
-  label: string;
-  icon?: React.ReactNode;
-  onClick: () => void;
-  danger?: boolean;
-  divider?: boolean;
-}
+import { useEffect, useRef } from 'react';
+import type { MenuItem } from './ContextMenuHooks';
+import { useContextMenu } from './ContextMenuHooks';
 
 interface ContextMenuProps {
   items: MenuItem[];
@@ -68,7 +62,7 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
           <button
             key={index}
             onClick={() => {
-              item.onClick();
+              item.onClick?.();
               onClose();
             }}
             className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
@@ -86,24 +80,5 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
   );
 }
 
-interface UseContextMenuReturn {
-  contextMenu: { x: number; y: number; items: MenuItem[] } | null;
-  showContextMenu: (e: React.MouseEvent, items: MenuItem[]) => void;
-  hideContextMenu: () => void;
-}
-
-export function useContextMenu(): UseContextMenuReturn {
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null);
-
-  const showContextMenu = (e: React.MouseEvent, items: MenuItem[]) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({ x: e.clientX, y: e.clientY, items });
-  };
-
-  const hideContextMenu = () => {
-    setContextMenu(null);
-  };
-
-  return { contextMenu, showContextMenu, hideContextMenu };
-}
+export { useContextMenu };
+export type { MenuItem };

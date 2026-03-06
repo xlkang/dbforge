@@ -27,7 +27,7 @@ function App() {
     if (connection?.type === 'mysql') {
       loadTables();
     }
-  }, []);
+  }, [loadTables]);
   
   // 全局键盘快捷键
   const { addTab, removeTab, setActiveTab, tabs, activeTabId } = useTabStore();
