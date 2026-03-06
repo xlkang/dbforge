@@ -183,7 +183,7 @@ app.post('/api/export', async (req, res) => {
     
     // Get all tables
     const [tables] = await pool.query(`SHOW TABLES`);
-    const tablesList = tables as any[];
+    const tablesList = tables;
     
     for (const tableRow of tablesList) {
       const tableName = tableRow[`Tables_in_${database}`];
@@ -198,7 +198,7 @@ app.post('/api/export', async (req, res) => {
       
       // Get table data
       const [dataResult] = await pool.query(`SELECT * FROM \`${tableName}\``);
-      const dataList = dataResult as any[];
+      const dataList = dataResult;
       
       if (dataList.length > 0) {
         const columns = Object.keys(dataList[0]).map(col => `\`${col}\``).join(', ');
