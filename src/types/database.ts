@@ -49,3 +49,26 @@ export interface QueryError {
 }
 
 export type QueryResultData = QueryResult | QueryError;
+
+// API Response types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
+
+export interface TableListResponse {
+  tables: TableInfo[];
+}
+
+export interface ColumnListResponse {
+  columns: ColumnInfo[];
+}
+
+export interface IndexListResponse {
+  indexes: IndexInfo[];
+}
+
+export interface CountResponse {
+  count: number;
+}
