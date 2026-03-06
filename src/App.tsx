@@ -15,7 +15,7 @@ import { ShortcutsPanel } from './components/layout/ShortcutsPanel';
 import { TabBar } from './components/tabs/TabBar';
 import { TabContent } from './components/tabs/TabContent';
 import { ToastContainer } from './components/common/ToastContainer';
-import { ErrorBoundary } from './components/common/Toast';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Toolbar } from './components/layout/Toolbar';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { GlobalSearch } from './components/layout/GlobalSearch';
