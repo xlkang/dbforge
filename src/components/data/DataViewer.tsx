@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
 const PAGE_SIZE = 100;
@@ -20,24 +21,31 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
   if (!queryResult && !queryError) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
-        <p>执行查询查看结果</p>
+      <div className="flex-1 flex items-center justify-center bg-gray-900/50">
+        <div className="text-center">
+          <Table2 className="w-12 h-12 text-gray-700 mx-auto mb-3" strokeWidth={1.5} />
+          <p className="text-gray-500">执行 SQL 查询查看结果</p>
+        </div>
       </div>
     );
   }
 
   if (queryError) {
     return (
-      <div className="p-4">
-        <div className="bg-red-900/30 border border-red-600 rounded-lg p-4">
-          <h4 className="text-red-400 font-semibold mb-2">查询错误</h4>
-          <pre className="text-red-300 text-sm whitespace-pre-wrap">{queryError}</pre>
+      <div className="p-4 bg-gray-900">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="w-5 h-5 text-red-400" strokeWidth={2} />
+            <h4 className="text-red-400 font-semibold">查询错误</h4>
+          </div>
+          <pre className="text-red-300/80 text-sm whitespace-pre-wrap bg-red-500/5 rounded-lg p-3 font-mono">{queryError}</pre>
         </div>
         <button
           onClick={clearResult}
-          className="mt-3 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded"
+          className="mt-3 flex items-center gap-2 px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors border border-gray-700"
         >
-          清除
+          <X className="w-4 h-4" />
+          清除结果
         </button>
       </div>
     );
@@ -45,7 +53,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
   if (!queryResult) return null;
 
-  const { columns, rows, rowCount, affectedRows, executionTime, isSelect } = queryResult;
+  const { columns, rows, rowCount, affectedRows = 0, executionTime, isSelect } = queryResult;
 
   // Calculate column statistics
   const columnStats = useMemo(() => {
@@ -113,19 +121,34 @@ export function DataViewer({ tableName }: DataViewerProps) {
   // Non-SELECT query result
   if (!isSelect) {
     return (
-      <div className="p-4">
-        <div className="bg-green-900/30 border border-green-600 rounded-lg p-4">
-          <h4 className="text-green-400 font-semibold mb-2">执行成功</h4>
-          <p className="text-green-300">
-            影响了 <span className="font-bold">{affectedRows}</span> 行
-          </p>
-          <p className="text-gray-400 text-sm mt-2">执行时间: {executionTime.toFixed(2)}ms</p>
+      <div className="p-6 bg-gray-900">
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-green-400" strokeWidth={2} />
+            </div>
+            <div>
+              <h4 className="text-green-400 font-semibold text-lg">执行成功</h4>
+              <p className="text-gray-500 text-sm">语句已成功执行</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-500/5 rounded-lg p-3">
+              <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">受影响行数</p>
+              <p className="text-green-400 text-2xl font-bold">{affectedRows.toLocaleString()}</p>
+            </div>
+            <div className="bg-green-500/5 rounded-lg p-3">
+              <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">执行时间</p>
+              <p className="text-green-400 text-2xl font-bold">{executionTime.toFixed(2)}ms</p>
+            </div>
+          </div>
         </div>
         <button
           onClick={clearResult}
-          className="mt-3 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded"
+          className="mt-4 flex items-center gap-2 px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors border border-gray-700"
         >
-          清除
+          <X className="w-4 h-4" />
+          清除结果
         </button>
       </div>
     );
@@ -134,8 +157,11 @@ export function DataViewer({ tableName }: DataViewerProps) {
   // SELECT query result
   if (columns.length === 0) {
     return (
-      <div className="p-4">
-        <div className="text-gray-400">查询返回空结果</div>
+      <div className="p-6 bg-gray-900">
+        <div className="text-gray-500 text-center py-8">
+          <Table2 className="w-10 h-10 text-gray-700 mx-auto mb-2" strokeWidth={1.5} />
+          <p>查询返回空结果</p>
+        </div>
       </div>
     );
   }
@@ -158,57 +184,82 @@ export function DataViewer({ tableName }: DataViewerProps) {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header with stats toggle */}
-      <div className="p-3 border-b border-gray-700 flex items-center justify-between bg-gray-800">
-        <div className="flex items-center gap-4 text-sm flex-wrap">
-          <span className="text-gray-400">
-            结果: <span className="text-gray-200">{displayRows.length.toLocaleString()} 行</span>
-            {filterText && <span className="text-blue-400 ml-1">(筛选)</span>}
-            {sortColumn && <span className="text-blue-400 ml-1">(排序)</span>}
-            {quickFilter && <span className="text-purple-400 ml-1">(快速过滤)</span>}
-          </span>
-          <span className="text-gray-500">|</span>
-          <span className="text-gray-400">
-            原始: <span className="text-gray-200">{rowCount.toLocaleString()} 行</span>
-          </span>
-          <span className="text-gray-500">|</span>
-          <span className="text-gray-400">
-            时间: <span className="text-gray-200">{executionTime.toFixed(2)}ms</span>
-          </span>
+    <div className="flex flex-col h-full bg-gray-900">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between bg-gray-900/80 shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Table2 className="w-4 h-4 text-blue-400" strokeWidth={2} />
+            <span className="text-gray-300 font-medium text-sm">查询结果</span>
+          </div>
+          <div className="h-4 w-px bg-gray-800"></div>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="text-gray-500">
+              显示 <span className="text-gray-300 font-medium">{displayRows.length.toLocaleString()}</span> 行
+              {(filterText || quickFilter) && (
+                <span className="text-blue-400 ml-1">(已筛选)</span>
+              )}
+            </span>
+            <span className="text-gray-600">原始: <span className="text-gray-400">{rowCount.toLocaleString()}</span></span>
+            <span className="text-gray-600 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span className="text-gray-400">{executionTime.toFixed(2)}ms</span>
+            </span>
+          </div>
           {displayTable && (
             <>
-              <span className="text-gray-500">|</span>
-              <span className="text-blue-400">表: {displayTable}</span>
+              <div className="h-4 w-px bg-gray-800"></div>
+              <span className="text-blue-400 text-sm bg-blue-500/10 px-2 py-0.5 rounded">{displayTable}</span>
             </>
           )}
         </div>
+        
         <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="筛选..."
-            value={filterText}
-            onChange={(e) => {
-              setFilterText(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500"
-          />
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+            <input
+              type="text"
+              placeholder="搜索..."
+              value={filterText}
+              onChange={(e) => {
+                setFilterText(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-8 pr-3 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50 w-36"
+            />
+            {filterText && (
+              <button
+                onClick={() => setFilterText('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          
+          {/* Stats Toggle */}
           <button
             onClick={() => setShowStats(!showStats)}
-            className={`px-2 py-1 text-sm rounded border ${
-              showStats ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+              showStats 
+                ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' 
+                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-300'
             }`}
             title="字段统计"
           >
-            📊 统计
+            <BarChart3 className="w-3.5 h-3.5" />
+            统计
           </button>
+          
+          {/* Quick Filter Clear */}
           {quickFilter && (
             <button
               onClick={() => setQuickFilter(null)}
-              className="px-2 py-1 text-sm bg-purple-600 hover:bg-purple-500 text-white rounded"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-purple-500/20 border border-purple-500/30 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-all"
             >
-              清除过滤
+              <Filter className="w-3.5 h-3.5" />
+              清除
             </button>
           )}
         </div>
@@ -216,33 +267,43 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
       {/* Stats Panel */}
       {showStats && (
-        <div className="border-b border-gray-700 bg-gray-800/50 p-3 max-h-48 overflow-auto">
+        <div className="border-b border-gray-800 bg-gray-800/30 p-3 max-h-48 overflow-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
             {columns.map(col => {
               const stats = columnStats[col];
               const nullPercent = ((stats.nulls / rows.length) * 100).toFixed(1);
               const topVals = getTopValues(col, 3);
               return (
-                <div key={col} className="bg-gray-700/50 rounded p-2 text-xs">
-                  <div className="font-mono text-blue-400 font-medium truncate" title={col}>{col}</div>
-                  <div className="text-gray-400 mt-1">
-                    <div>唯一值: <span className="text-gray-200">{stats.unique.toLocaleString()}</span></div>
-                    <div>NULL: <span className={`${stats.nulls > 0 ? 'text-red-400' : 'text-gray-200'}`}>{stats.nulls} ({nullPercent}%)</span></div>
+                <div key={col} className="bg-gray-800/50 hover:bg-gray-800/80 rounded-lg p-3 transition-colors border border-gray-700/50">
+                  <div className="font-mono text-blue-400 font-medium text-sm truncate mb-2" title={col}>{col}</div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">唯一值</span>
+                      <span className="text-gray-300 font-medium">{stats.unique.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">NULL</span>
+                      <span className={`font-medium ${stats.nulls > 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                        {stats.nulls} <span className="text-gray-600">({nullPercent}%)</span>
+                      </span>
+                    </div>
                   </div>
                   {topVals.length > 0 && (
-                    <div className="mt-1 text-gray-500">
-                      热门: {topVals.map((t, i) => (
-                        <span key={i} className="mr-1">
+                    <div className="mt-2 pt-2 border-t border-gray-700/50">
+                      <div className="text-gray-600 text-[10px] uppercase tracking-wider mb-1">热门值</div>
+                      <div className="flex flex-wrap gap-1">
+                        {topVals.map((t, i) => (
                           <button
+                            key={i}
                             onClick={() => setQuickFilter({ col, val: t.val })}
-                            className="hover:text-purple-400 hover:underline"
+                            className="text-xs px-1.5 py-0.5 bg-gray-700 hover:bg-purple-500/30 hover:text-purple-400 text-gray-400 rounded transition-colors"
                             title={`过滤: ${t.val}`}
                           >
-                            {String(t.val).slice(0, 10)}
+                            {String(t.val).slice(0, 8)}
+                            <span className="ml-1 text-gray-600">{t.percent}%</span>
                           </button>
-                          ({t.percent}%)
-                        </span>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -254,14 +315,14 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-700 sticky top-0 z-10">
+        <table className="w-full text-sm border-collapse">
+          <thead className="bg-gray-800/80 sticky top-0 z-10 backdrop-blur-sm">
             <tr>
-              <th className="px-2 py-2 text-left text-gray-300 font-medium border-b border-gray-600 w-12">#</th>
+              <th className="px-3 py-2.5 text-left text-gray-500 font-medium text-xs border-b border-gray-700 w-14">#</th>
               {columns.map(col => (
                 <th 
                   key={col} 
-                  className="px-2 py-2 text-left text-gray-300 font-medium border-b border-gray-600 font-mono min-w-[100px] cursor-pointer hover:bg-gray-600"
+                  className="px-3 py-2.5 text-left text-gray-400 font-medium text-xs border-b border-gray-700 font-mono min-w-[120px] cursor-pointer hover:bg-gray-700/50 transition-colors group"
                   onClick={() => {
                     if (sortColumn === col) {
                       if (sortDirection === 'asc') {
@@ -277,10 +338,14 @@ export function DataViewer({ tableName }: DataViewerProps) {
                     setCurrentPage(1);
                   }}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     {col}
-                    {sortColumn === col && (
-                      <span className="text-blue-400 text-xs">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                    {sortColumn === col ? (
+                      sortDirection === 'asc' ? 
+                        <ArrowUp className="w-3 h-3 text-blue-400" /> : 
+                        <ArrowDown className="w-3 h-3 text-blue-400" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-gray-700 opacity-0 group-hover:opacity-100" />
                     )}
                   </div>
                 </th>
@@ -291,24 +356,24 @@ export function DataViewer({ tableName }: DataViewerProps) {
             {paginatedRows.map((row, idx) => (
               <tr 
                 key={startIndex + idx} 
-                className="hover:bg-gray-800 border-b border-gray-700/50"
+                className="hover:bg-gray-800/50 border-b border-gray-800/50 transition-colors"
               >
-                <td className="px-2 py-2 text-gray-500 text-xs text-right">{startIndex + idx + 1}</td>
+                <td className="px-3 py-2.5 text-gray-600 text-xs text-right font-mono">{startIndex + idx + 1}</td>
                 {columns.map(col => (
                   <td 
                     key={col} 
-                    className="px-2 py-2 text-gray-300 font-mono max-w-xs truncate"
+                    className="px-3 py-2.5 text-gray-300 font-mono max-w-[300px] truncate"
                   >
                     {row[col] === null ? (
-                      <span className="text-gray-500 italic">NULL</span>
+                      <span className="text-gray-600 italic">NULL</span>
                     ) : quickFilter?.col === col && quickFilter?.val === row[col] ? (
-                      <span className="bg-purple-500/30 text-purple-200 px-1 rounded">
+                      <span className="bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
                         {highlightText(String(row[col]))}
                       </span>
                     ) : (
                       <button
                         onClick={() => setQuickFilter({ col, val: row[col] })}
-                        className="hover:text-purple-400 text-left"
+                        className="hover:text-purple-400 text-left w-full"
                         title="点击快速过滤"
                       >
                         {highlightText(String(row[col]))}
@@ -324,40 +389,46 @@ export function DataViewer({ tableName }: DataViewerProps) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-3 border-t border-gray-700 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="px-4 py-3 border-t border-gray-800 flex items-center justify-between bg-gray-900/80 shrink-0">
+          <div className="text-xs text-gray-500">
+            显示 {(startIndex + 1).toLocaleString()}-{Math.min(startIndex + PAGE_SIZE, displayRows.length).toLocaleString()} 条，
+            共 {displayRows.length.toLocaleString()} 条
+          </div>
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="px-2 py-1 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              title="首页"
             >
-              ««
+              <ChevronsLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              title="上一页"
             >
-              «
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          </div>
-          <span className="px-3 text-gray-400 text-sm">
-            第 {currentPage} / {totalPages} 页 ({(startIndex + 1).toLocaleString()}-{Math.min(startIndex + PAGE_SIZE, displayRows.length).toLocaleString()} 条)
-          </span>
-          <div className="flex items-center gap-2">
+            <span className="px-3 text-gray-400 text-sm font-medium">
+              {currentPage} / {totalPages}
+            </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              title="下一页"
             >
-              »
+              <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="px-2 py-1 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+              className="p-1.5 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed rounded text-gray-500 hover:text-gray-300 transition-colors"
+              title="末页"
             >
-              »»
+              <ChevronsRight className="w-4 h-4" />
             </button>
           </div>
         </div>
