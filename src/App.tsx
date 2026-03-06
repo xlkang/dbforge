@@ -12,6 +12,8 @@ import { ThemeToggle } from './components/layout/ThemeToggle';
 import { ShortcutsPanel } from './components/layout/ShortcutsPanel';
 import { TabBar } from './components/tabs/TabBar';
 import { TabContent } from './components/tabs/TabContent';
+import { ToastContainer } from './components/common/ToastContainer';
+import { ErrorBoundary } from './components/common/Toast';
 
 function App() {
   const connection = useDatabaseStore((s) => s.connection);
@@ -23,8 +25,11 @@ function App() {
   const hasTabs = tabs.length > 0;
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-gray-100">
-      {/* Header */}
+    <ErrorBoundary>
+      <div className="h-screen flex flex-col bg-gray-900 text-gray-100">
+        <ToastContainer />
+        
+        {/* Header */}
       <header className="h-12 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center">
           <h1 className="text-lg font-bold text-blue-400">DBForge</h1>
@@ -77,6 +82,7 @@ function App() {
       {/* Status Bar */}
       <StatusBar />
     </div>
+    </ErrorBoundary>
   );
 }
 
