@@ -3,6 +3,16 @@ import { type FormEvent } from 'react';
 import { Server, Loader2, Play } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
+// 动态获取 API 基础 URL
+const getApiBaseUrl = () => {
+  // 开发环境使用同源代理或 localhost
+  if (import.meta.env.DEV) {
+    // 优先使用代理路径，否则回退到 localhost
+    return '/api';
+  }
+  return '/api';
+};
+
 export function MySQLConnect() {
   const { setConnection, setError } = useDatabaseStore();
   const [form, setForm] = useState({
@@ -44,8 +54,10 @@ export function MySQLConnect() {
     setConnecting(true);
     setError(null);
 
+    const API_BASE = getApiBaseUrl();
+
     try {
-      const res = await fetch('http://localhost:3001/api/connect', {
+      const res = await fetch(`${API_BASE}/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
