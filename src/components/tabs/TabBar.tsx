@@ -50,7 +50,7 @@ export function TabBar() {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex items-center bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 overflow-x-auto">
+    <div className="flex items-center bg-[var(--bg-primary)]/80 backdrop-blur-sm border-b border-gray-800 overflow-x-auto">
       <div className="flex items-center">
         {tabs.map((tab) => (
           <div
@@ -59,8 +59,8 @@ export function TabBar() {
             onContextMenu={(e) => handleContextMenu(e, tab.id)}
             className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer border-r border-gray-800 min-w-[120px] max-w-[200px] group transition-all ${
               activeTabId === tab.id
-                ? 'bg-gray-800 text-white border-b-2 border-b-blue-500'
-                : 'text-gray-500 hover:bg-gray-800/50 hover:text-gray-300 border-b-2 border-b-transparent'
+                ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-b-2 border-b-[var(--accent)]'
+                : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]/50 hover:text-[var(--text-secondary)] border-b-2 border-b-transparent'
             }`}
           >
             <TabIcon type={tab.type} />
@@ -70,7 +70,7 @@ export function TabBar() {
                 e.stopPropagation();
                 removeTab(tab.id);
               }}
-              className="opacity-0 group-hover:opacity-100 hover:bg-gray-700 p-0.5 rounded text-gray-500 hover:text-red-400 transition-all"
+              className="opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-tertiary)] p-0.5 rounded text-[var(--text-muted)] hover:text-red-400 transition-all"
             >
               <X className="w-3 h-3" strokeWidth={2} />
             </button>
@@ -86,7 +86,7 @@ export function TabBar() {
             sql: '',
           })
         }
-        className="mx-2 p-1.5 text-gray-600 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+        className="mx-2 p-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-colors"
         title="新建查询"
       >
         <Plus className="w-4 h-4" strokeWidth={2} />
