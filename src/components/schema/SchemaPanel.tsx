@@ -6,6 +6,7 @@ import { useToastStore } from '../../stores/toastStore';
 import { useContextMenu, type MenuItem } from '../common/ContextMenu';
 import { CreateTableModal } from './CreateTableModal';
 import { IndexModal } from './IndexModal';
+import { AlterTableModal } from './AlterTableModal';
 import { SchemaSkeleton } from '../common/Skeleton';
 
 export function SchemaPanel() {
@@ -25,6 +26,7 @@ export function SchemaPanel() {
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const addToast = useToastStore((state) => state.addToast);
   const [showIndexModal, setShowIndexModal] = useState(false);
+  const [showAlterTableModal, setShowAlterTableModal] = useState(false);
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
 
   const toggleExpand = (tableName: string) => {
@@ -58,6 +60,13 @@ export function SchemaPanel() {
         onClick: () => selectTable(tableName),
       },
       { label: '', onClick: () => {}, divider: true },
+      {
+        label: '修改表结构',
+        onClick: () => {
+          selectTable(tableName);
+          setShowAlterTableModal(true);
+        },
+      },
       {
         label: '创建索引',
         onClick: () => {
@@ -283,6 +292,9 @@ export function SchemaPanel() {
 
       {showIndexModal && selectedTable && (
         <IndexModal tableName={selectedTable} onClose={() => setShowIndexModal(false)} />
+      )}
+      {showAlterTableModal && selectedTable && (
+        <AlterTableModal tableName={selectedTable} onClose={() => setShowAlterTableModal(false)} isOpen={showAlterTableModal} />
       )}
 
       {contextMenu && (
