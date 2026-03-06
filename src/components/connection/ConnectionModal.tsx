@@ -63,7 +63,8 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
       
       onClose();
     } catch (err) {
-      setError('无法连接到服务器，请确保后端服务已启动');
+      setError('无法连接到服务器 (http://localhost:3001)，请确保后端服务已启动：npm run server');
+      console.error('连接错误:', err);
     } finally {
       setConnecting(false);
     }
