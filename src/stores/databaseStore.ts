@@ -160,7 +160,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   
   reconnect: async () => {
     const { connection } = get();
-    if (!connection || connection.type !== 'mysql') return;
+    if (!connection || connection.type !== 'mysql' && connection.type !== 'postgresql') return;
     
     set({ isConnecting: true, error: null });
     
@@ -168,7 +168,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const res = await fetchWithTimeout(`${API_BASE}/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({ dbType: connection.type,
           host: connection.host,
           port: connection.port,
           user: connection.user,
@@ -193,7 +193,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   
   loadTables: async () => {
     const { connection } = get();
-    if (!connection || connection.type !== 'mysql') return;
+    if (!connection || connection.type !== 'mysql' && connection.type !== 'postgresql') return;
     
     set({ isLoading: true, error: null });
     
@@ -201,7 +201,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const res = await fetchWithTimeout(`${API_BASE}/tables`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({ dbType: connection.type,
           host: connection.host,
           port: connection.port,
           user: connection.user,
@@ -222,7 +222,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
             const countRes = await fetchWithTimeout(`${API_BASE}/count`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+              body: JSON.stringify({ dbType: connection.type,
                 host: connection.host,
                 port: connection.port,
                 user: connection.user,
@@ -250,13 +250,13 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   
   loadViews: async () => {
     const { connection } = get();
-    if (!connection || connection.type !== 'mysql') return;
+    if (!connection || connection.type !== 'mysql' && connection.type !== 'postgresql') return;
     
     try {
       const res = await fetch(`${API_BASE}/views`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({ dbType: connection.type,
           host: connection.host,
           port: connection.port,
           user: connection.user,
@@ -276,13 +276,13 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   
   loadTriggers: async () => {
     const { connection } = get();
-    if (!connection || connection.type !== 'mysql') return;
+    if (!connection || connection.type !== 'mysql' && connection.type !== 'postgresql') return;
     
     try {
       const res = await fetch(`${API_BASE}/triggers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({ dbType: connection.type,
           host: connection.host,
           port: connection.port,
           user: connection.user,
@@ -328,7 +328,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         const res = await fetchWithTimeout(`${API_BASE}/schema`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: JSON.stringify({ dbType: connection.type,
             host: connection.host,
             port: connection.port,
             user: connection.user,
@@ -407,7 +407,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         const res = await fetchWithTimeout(`${API_BASE}/query`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: JSON.stringify({ dbType: connection.type,
             host: connection.host,
             port: connection.port,
             user: connection.user,
@@ -467,7 +467,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         const res = await fetchWithTimeout(`${API_BASE}/query`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: JSON.stringify({ dbType: connection.type,
             host: connection.host,
             port: connection.port,
             user: connection.user,

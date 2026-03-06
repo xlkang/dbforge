@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, Server, Loader2, Eye, EyeOff } from 'lucide-react';
+import { X, Server, Loader2, Eye, EyeOff, Database } from 'lucide-react';
 import { useConnectionStore, type MySQLConnection } from '../../stores/connectionStore';
 import { useDatabaseStore } from '../../stores/databaseStore';
+import type { DatabaseType } from '../../types/database';
 
 interface ConnectionModalProps {
   isOpen: boolean;
@@ -14,14 +15,22 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
   const { setConnection, setError } = useDatabaseStore();
   const [connecting, setConnecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [dbType, setDbType] = useState<DatabaseType>(editConnection?.type || 'mysql');
   
-  const [form, setForm] = useState<Omit<MySQLConnection, 'id'>>({
+  const [form, setForm] = useState<Omit<MySQLConnection, 'id' | 'type'>>({
     name: editConnection?.name || '',
     host: editConnection?.host || 'localhost',
     port: editConnection?.port || 3306,
     user: editConnection?.user || 'root',
     password: editConnection?.password || '',
     database: editConnection?.database || '',
+  });
+
+  // Update form port when dbType changes
+  useState(() => {
+    if (!editConnection) {
+      setForm(prev => ({ ...prev, port: dbType === 'postgresql' ? 5432 : 3306 }));
+    }
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +42,7 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
       const res = await fetch('http://localhost:3001/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, type: dbType }),
       });
       const data = await res.json();
       
@@ -44,14 +53,14 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
       }
 
       if (editConnection) {
-        updateConnection(editConnection.id, form);
+        updateConnection(editConnection.id, { ...form, type: dbType });
       } else {
-        addConnection(form);
+        addConnection({ ...form, type: dbType });
       }
 
       setConnection({
         id: editConnection?.id || crypto.randomUUID(),
-        type: 'mysql',
+        type: dbType,
         name: form.name || form.database,
         host: form.host,
         port: form.port,
@@ -83,7 +92,7 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">
-                {editConnection ? '编辑连接' : '新建 MySQL 连接'}
+                {editConnection ? '编辑连接' : `新建 ${dbType === 'postgresql' ? 'PostgreSQL' : 'MySQL'} 连接`}
               </h3>
               <p className="text-xs text-[var(--text-muted)]">配置数据库连接参数</p>
             </div>
@@ -98,6 +107,37 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
         
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Database Type Selector */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">数据库类型</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => { setDbType('mysql'); setForm(f => ({ ...f, port: 3306 })); }}
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                  dbType === 'mysql' 
+                    ? 'bg-orange-500/20 border-orange-500 text-orange-400' 
+                    : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-orange-500/50'
+                }`}
+              >
+                <Database className="w-4 h-4" />
+                MySQL
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDbType('postgresql'); setForm(f => ({ ...f, port: 5432 })); }}
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                  dbType === 'postgresql' 
+                    ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                    : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-blue-500/50'
+                }`}
+              >
+                <Database className="w-4 h-4" />
+                PostgreSQL
+              </button>
+            </div>
+          </div>
+          
           {/* Connection Name */}
           <div>
             <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">连接名称</label>

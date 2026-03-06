@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export interface MySQLConnection {
   id: string;
+  type?: 'mysql' | 'postgresql' | 'sqlite';
   name: string;
   host: string;
   port: number;
