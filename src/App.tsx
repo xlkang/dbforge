@@ -22,9 +22,9 @@ function App() {
   const { tabs } = useTabStore();
   const loadTables = useDatabaseStore((s) => s.loadTables);
   
-  // 自动重连：页面加载时如果存在连接，自动加载表结构
+  // 自动重连：页面加载时如果存在保存的连接，自动加载表结构
   useEffect(() => {
-    if (connection?.isConnected && connection.type === 'mysql') {
+    if (connection?.type === 'mysql') {
       loadTables();
     }
   }, []);
