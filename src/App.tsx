@@ -105,9 +105,7 @@ function App() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <QuickStart onFileSelect={handleFileSelect} />
-              </div>
+              <QuickStart onFileSelect={handleFileSelect} />
             )}
           </main>
         </div>
