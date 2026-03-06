@@ -18,6 +18,8 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { ErrorBoundary } from './components/common/Toast';
 import { Toolbar } from './components/layout/Toolbar';
 import { CommandPalette } from './components/layout/CommandPalette';
+import { GlobalSearch } from './components/layout/GlobalSearch';
+import { ConnectionStatus } from './components/layout/ConnectionStatus';
 
 function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -112,6 +114,7 @@ function App() {
                 <span className="text-xs text-[var(--text-secondary)] font-mono">{dbName}</span>
               </div>
             )}
+            {connection && <ConnectionStatus />}
           </div>
           <div className="flex items-center gap-1">
             <SavedQueries />
@@ -179,6 +182,9 @@ function App() {
           isOpen={commandPaletteOpen} 
           onClose={() => setCommandPaletteOpen(false)} 
         />
+        
+        {/* Global Search */}
+        <GlobalSearch />
       </div>
     </ErrorBoundary>
   );

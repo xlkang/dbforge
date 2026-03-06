@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Code, Wand2, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, highlightSpecialChars } from '@codemirror/view';
 import { autocompletion } from '@codemirror/autocomplete';
 import { sql, SQLite, MySQL } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { linter, type Diagnostic } from '@codemirror/lint';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { QueryHistory } from './QueryHistory';
 import { formatSQL } from '../../lib/sqlFormatter';
@@ -87,6 +88,51 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
         lineNumbers(),
         highlightActiveLine(),
         highlightActiveLineGutter(),
+        highlightSpecialChars(),
+        // SQL 语法检查器
+        linter((view) => {
+          const diagnostics: Diagnostic[] = [];
+          const text = view.state.doc.toString();
+          
+          // 检查括号匹配
+          const lines = text.split('\n');
+          let parenCount = 0;
+          let bracketCount = 0;
+          
+          lines.forEach((line, lineIndex) => {
+            for (const char of line) {
+              if (char === '(') parenCount++;
+              if (char === ')') parenCount--;
+              if (char === '[') bracketCount++;
+              if (char === ']') bracketCount--;
+            }
+            
+            // 检查不匹配的括号 (单行)
+            const openParens = (line.match(/\(/g) || []).length;
+            const closeParens = (line.match(/\)/g) || []).length;
+            if (openParens !== closeParens) {
+              const from = view.state.doc.line(lineIndex + 1).from;
+              diagnostics.push({
+                from,
+                to: from + line.length,
+                severity: 'error',
+                message: `括号不匹配: ${openParens} 个开括号，${closeParens} 个闭括号`
+              });
+            }
+          });
+          
+          // 检查未闭合的括号 (全局)
+          if (parenCount !== 0) {
+            diagnostics.push({
+              from: view.state.doc.length - 1,
+              to: view.state.doc.length,
+              severity: 'warning',
+              message: `有 ${Math.abs(parenCount)} 个括号未闭合`
+            });
+          }
+          
+          return diagnostics;
+        }),
         autocompletion({
           override: [
             (context) => {
