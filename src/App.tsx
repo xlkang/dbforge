@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useDatabaseStore } from './stores/databaseStore';
 import { useTabStore } from './stores/tabStore';
 import { DatabasePanel } from './components/connection/DatabasePanel';
@@ -17,8 +17,10 @@ import { TabContent } from './components/tabs/TabContent';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ErrorBoundary } from './components/common/Toast';
 import { Toolbar } from './components/layout/Toolbar';
+import { CommandPalette } from './components/layout/CommandPalette';
 
 function App() {
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const connection = useDatabaseStore((s) => s.connection);
   const loadTables = useDatabaseStore((s) => s.loadTables);
   
@@ -34,6 +36,12 @@ function App() {
   const setQuery = useDatabaseStore((s) => s.setQuery);
   
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Ctrl+Shift+P: 打开命令面板
+    if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+      e.preventDefault();
+      setCommandPaletteOpen(true);
+      return;
+    }
     // Ctrl+N: 新建查询标签
     if (e.ctrlKey && e.key === 'n') {
       e.preventDefault();
@@ -165,6 +173,12 @@ function App() {
 
         {/* Status Bar */}
         <StatusBar />
+
+        {/* Command Palette */}
+        <CommandPalette 
+          isOpen={commandPaletteOpen} 
+          onClose={() => setCommandPaletteOpen(false)} 
+        />
       </div>
     </ErrorBoundary>
   );

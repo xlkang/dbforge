@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { 
   Database, FileText, Play, Download, Upload, 
-  RefreshCw, Settings, Sun, Moon, Table2, FolderOpen, Layers
+  RefreshCw, Settings, Sun, Moon, Table2, FolderOpen, Layers, BarChart3
 } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
+import { useTabStore } from '../../stores/tabStore';
 
 interface ToolbarProps {
   onNewQuery?: () => void;
@@ -11,7 +12,8 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
-  const { connection, executeQuery, loadTables } = useDatabaseStore();
+  const { connection, executeQuery, loadTables, queryResult } = useDatabaseStore();
+  const { addTab } = useTabStore();
   const [executing, setExecuting] = useState(false);
 
   const handleExecute = async () => {
@@ -27,6 +29,16 @@ export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
 
   const refreshTables = async () => {
     await loadTables();
+  };
+
+  const openChartPanel = () => {
+    // 如果有查询结果，打开图表面板
+    if (queryResult && queryResult.isSelect) {
+      addTab({
+        title: '数据图表',
+        type: 'chart',
+      });
+    }
   };
 
   return (
@@ -75,6 +87,13 @@ export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
       <div className="flex-1" />
 
       {/* Right Side */}
+      <ToolbarButton 
+        icon={BarChart3} 
+        label="图表" 
+        title="查看查询结果图表" 
+        onClick={openChartPanel}
+        disabled={!queryResult || !queryResult.isSelect}
+      />
       <ToolbarButton icon={Layers} label="ER图" title="查看ER图" />
       <ToolbarButton icon={Settings} label="设置" title="设置" />
       <ThemeToggleButton />
@@ -89,9 +108,10 @@ interface ToolbarButtonProps {
   onClick?: () => void;
   variant?: 'default' | 'primary';
   loading?: boolean;
+  disabled?: boolean;
 }
 
-function ToolbarButton({ icon: Icon, label, title, onClick, variant = 'default', loading }: ToolbarButtonProps) {
+function ToolbarButton({ icon: Icon, label, title, onClick, variant = 'default', loading, disabled }: ToolbarButtonProps) {
   const baseClass = variant === 'primary' 
     ? 'bg-blue-600 hover:bg-[var(--accent)] text-white' 
     : 'hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)]';
@@ -100,8 +120,8 @@ function ToolbarButton({ icon: Icon, label, title, onClick, variant = 'default',
     <button
       onClick={onClick}
       title={title}
-      disabled={loading}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${baseClass} disabled:opacity-50`}
+      disabled={loading || disabled}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${baseClass} disabled:opacity-50 disabled:cursor-not-allowed`}
     >
       {loading ? (
         <RefreshCw size={14} className="animate-spin" />

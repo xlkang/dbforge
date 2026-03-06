@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export interface Tab {
   id: string;
   title: string;
-  type: 'table' | 'query' | 'diagram';
+  type: 'table' | 'query' | 'diagram' | 'chart';
   tableName?: string;
   sql?: string;
 }

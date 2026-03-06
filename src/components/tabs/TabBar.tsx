@@ -10,6 +10,8 @@ const TabIcon = ({ type }: { type: string }) => {
       return <Code className="w-3.5 h-3.5" strokeWidth={2} />;
     case 'diagram':
       return <Network className="w-3.5 h-3.5" strokeWidth={2} />;
+    case 'chart':
+      return <FileText className="w-3.5 h-3.5" strokeWidth={2} />;
     default:
       return <FileText className="w-3.5 h-3.5" strokeWidth={2} />;
   }
