@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, GripVertical, Search, X } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useToastStore } from '../../stores/toastStore';
@@ -28,6 +28,14 @@ export function SchemaPanel() {
   const [showIndexModal, setShowIndexModal] = useState(false);
   const [showAlterTableModal, setShowAlterTableModal] = useState(false);
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter tables by search query
+  const filteredTables = useMemo(() => {
+    if (!searchQuery.trim()) return tables;
+    const query = searchQuery.toLowerCase();
+    return tables.filter(t => t.name.toLowerCase().includes(query));
+  }, [tables, searchQuery]);
 
   const toggleExpand = (tableName: string) => {
     const newExpanded = new Set(expandedTables);
@@ -131,34 +139,55 @@ export function SchemaPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-3 border-b border-[var(--border-color)]/50 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Table2 className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
-          <h3 className="text-sm font-semibold text-[var(--text-secondary)]">数据表</h3>
-          <span className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded">{tables.length}</span>
+      <div className="p-3 border-b border-[var(--border-color)]/50">
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-2">
+            <Table2 className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
+            <h3 className="text-sm font-semibold text-[var(--text-secondary)]">数据表</h3>
+            <span className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded">{filteredTables.length}/{tables.length}</span>
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => addTab({ title: 'ER图', type: 'diagram' })}
+              className="p-1.5 hover:bg-purple-500/20 text-[var(--text-muted)] hover:text-purple-400 rounded-lg transition-colors"
+              title="查看 ER 图"
+            >
+              <Network className="w-4 h-4" strokeWidth={2} />
+            </button>
+            <CreateTableModal />
+          </div>
         </div>
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => addTab({ title: 'ER图', type: 'diagram' })}
-            className="p-1.5 hover:bg-purple-500/20 text-[var(--text-muted)] hover:text-purple-400 rounded-lg transition-colors"
-            title="查看 ER 图"
-          >
-            <Network className="w-4 h-4" strokeWidth={2} />
-          </button>
-          <CreateTableModal />
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+          <input
+            type="text"
+            placeholder="搜索表..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-8 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]/50"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
       
       {/* Table List */}
       <div className="flex-1 overflow-auto">
-        {tables.length === 0 ? (
+        {filteredTables.length === 0 ? (
           <div className="p-6 text-center">
             <Table2 className="w-8 h-8 text-gray-700 mx-auto mb-2" strokeWidth={1.5} />
-            <p className="text-[var(--text-muted)] text-sm">暂无数据表</p>
+            <p className="text-[var(--text-muted)] text-sm">{searchQuery ? '没有匹配的表' : '暂无数据表'}</p>
           </div>
         ) : (
           <div className="p-2 space-y-1">
-            {tables.map(table => {
+            {filteredTables.map(table => {
               const isExpanded = expandedTables.has(table.name) || selectedTable === table.name;
               const isSelected = selectedTable === table.name;
               
