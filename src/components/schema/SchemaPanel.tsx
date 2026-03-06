@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
+import { useToastStore } from '../../stores/toastStore';
 import { useContextMenu, type MenuItem } from '../common/ContextMenu';
 import { CreateTableModal } from './CreateTableModal';
 import { IndexModal } from './IndexModal';
@@ -22,6 +23,7 @@ export function SchemaPanel() {
   } = useDatabaseStore();
   const { addTab } = useTabStore();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
+  const addToast = useToastStore((state) => state.addToast);
   const [showIndexModal, setShowIndexModal] = useState(false);
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
 
@@ -71,6 +73,9 @@ export function SchemaPanel() {
           if (newName && newName !== tableName) {
             executeQuery(`ALTER TABLE \`${tableName}\` RENAME TO \`${newName}\``).then(() => {
               loadTables();
+              addToast(`表 "${tableName}" 已重命名为 "${newName}"`, 'success');
+            }).catch((err) => {
+              addToast('重命名失败: ' + err.message, 'error');
             });
           }
         },
@@ -82,6 +87,9 @@ export function SchemaPanel() {
           if (confirm(`确定要删除表 "${tableName}" 吗？此操作不可恢复！`)) {
             executeQuery(`DROP TABLE \`${tableName}\``).then(() => {
               loadTables();
+              addToast(`表 "${tableName}" 已删除`, 'success');
+            }).catch((err) => {
+              addToast('删除失败: ' + err.message, 'error');
             });
           }
         },
