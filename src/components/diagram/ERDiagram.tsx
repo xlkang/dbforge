@@ -167,7 +167,7 @@ export function ERDiagram({ width = 800, height = 600 }: ERDiagramProps) {
 
   if (!connection) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full text-[var(--text-muted)]">
         请先连接数据库
       </div>
     );
@@ -179,13 +179,13 @@ export function ERDiagram({ width = 800, height = 600 }: ERDiagramProps) {
         ref={canvasRef}
         width={width}
         height={height}
-        className="border border-gray-700 rounded cursor-move"
+        className="border border-[var(--border-color)] rounded cursor-move"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-      <div className="absolute top-2 right-2 text-xs text-gray-500">
+      <div className="absolute top-2 right-2 text-xs text-[var(--text-muted)]">
         共 {tables.length} 张表 • 点击选中 • 拖拽移动
       </div>
     </div>

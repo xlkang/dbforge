@@ -30,11 +30,11 @@ export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
   };
 
   return (
-    <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center px-2 gap-1 shrink-0">
+    <div className="h-10 bg-[var(--bg-secondary)] border-b border-[var(--border-color)] flex items-center px-2 gap-1 shrink-0">
       {/* Connection */}
-      <div className="flex items-center gap-1 px-2 border-r border-gray-700 mr-2">
-        <Database size={14} className="text-blue-400" />
-        <span className="text-xs text-gray-400">
+      <div className="flex items-center gap-1 px-2 border-r border-[var(--border-color)] mr-2">
+        <Database size={14} className="text-[var(--accent)]" />
+        <span className="text-xs text-[var(--text-muted)]">
           {connection ? connection.name : '未连接'}
         </span>
       </div>
@@ -44,7 +44,7 @@ export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
       <ToolbarButton icon={Table2} label="新建表" title="创建新表" onClick={onNewTable} />
       <ToolbarButton icon={FileText} label="新建查询" title="新建查询窗口" onClick={onNewQuery} />
       
-      <div className="w-px h-5 bg-gray-700 mx-1" />
+      <div className="w-px h-5 bg-[var(--bg-tertiary)] mx-1" />
 
       {/* Execute */}
       <ToolbarButton 
@@ -56,13 +56,13 @@ export function Toolbar({ onNewQuery, onNewTable }: ToolbarProps) {
         loading={executing}
       />
       
-      <div className="w-px h-5 bg-gray-700 mx-1" />
+      <div className="w-px h-5 bg-[var(--bg-tertiary)] mx-1" />
 
       {/* Data Operations */}
       <ToolbarButton icon={Download} label="导出" title="导出数据" />
       <ToolbarButton icon={Upload} label="导入" title="导入数据" />
       
-      <div className="w-px h-5 bg-gray-700 mx-1" />
+      <div className="w-px h-5 bg-[var(--bg-tertiary)] mx-1" />
 
       {/* Refresh */}
       <ToolbarButton 
@@ -93,8 +93,8 @@ interface ToolbarButtonProps {
 
 function ToolbarButton({ icon: Icon, label, title, onClick, variant = 'default', loading }: ToolbarButtonProps) {
   const baseClass = variant === 'primary' 
-    ? 'bg-blue-600 hover:bg-blue-500 text-white' 
-    : 'hover:bg-gray-700 text-gray-300';
+    ? 'bg-blue-600 hover:bg-[var(--accent)] text-white' 
+    : 'hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)]';
   
   return (
     <button
@@ -138,7 +138,7 @@ function ThemeToggleButton() {
     <button
       onClick={toggle}
       title={dark ? '切换到浅色模式' : '切换到深色模式'}
-      className="p-1.5 rounded hover:bg-gray-700 text-gray-400"
+      className="p-1.5 rounded hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
     >
       {dark ? <Sun size={14} /> : <Moon size={14} />}
     </button>

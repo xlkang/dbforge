@@ -98,7 +98,7 @@ export function DataPanel({ tableName, mode = 'view' }: DataPanelProps) {
 
   if (!displayTable) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-[var(--text-muted)]">
         <div className="text-center">
           <p className="text-lg mb-2">请选择一个表</p>
           <p className="text-sm">在左侧表结构面板选择表查看数据</p>
