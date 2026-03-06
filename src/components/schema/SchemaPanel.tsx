@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Table2, Columns3, Hash, Key, Plus, Network, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useContextMenu, type MenuItem } from '../common/ContextMenu';
@@ -22,6 +23,17 @@ export function SchemaPanel() {
   const { addTab } = useTabStore();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [showIndexModal, setShowIndexModal] = useState(false);
+  const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (tableName: string) => {
+    const newExpanded = new Set(expandedTables);
+    if (newExpanded.has(tableName)) {
+      newExpanded.delete(tableName);
+    } else {
+      newExpanded.add(tableName);
+    }
+    setExpandedTables(newExpanded);
+  };
 
   const handleDoubleClick = (tableName: string) => {
     addTab({
@@ -34,7 +46,7 @@ export function SchemaPanel() {
   const handleContextMenu = (e: React.MouseEvent, tableName: string) => {
     const items: MenuItem[] = [
       {
-        label: '打开',
+        label: '在新标签页中打开',
         onClick: () => {
           addTab({ title: tableName, type: 'table', tableName });
         },
@@ -53,7 +65,7 @@ export function SchemaPanel() {
       },
       { label: '', onClick: () => {}, divider: true },
       {
-        label: '重命名',
+        label: '重命名表',
         onClick: () => {
           const newName = prompt('输入新表名:', tableName);
           if (newName && newName !== tableName) {
@@ -64,7 +76,7 @@ export function SchemaPanel() {
         },
       },
       {
-        label: '删除',
+        label: '删除表',
         danger: true,
         onClick: () => {
           if (confirm(`确定要删除表 "${tableName}" 吗？此操作不可恢复！`)) {
@@ -101,91 +113,137 @@ export function SchemaPanel() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-gray-700 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-100">表结构</h3>
-        <div className="flex gap-2">
+      {/* Header */}
+      <div className="p-3 border-b border-gray-700/50 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Table2 className="w-4 h-4 text-gray-500" strokeWidth={2} />
+          <h3 className="text-sm font-semibold text-gray-300">数据表</h3>
+          <span className="text-xs text-gray-600 bg-gray-800 px-1.5 py-0.5 rounded">{tables.length}</span>
+        </div>
+        <div className="flex gap-1.5">
           <button
             onClick={() => addTab({ title: 'ER图', type: 'diagram' })}
-            className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded"
+            className="p-1.5 hover:bg-purple-500/20 text-gray-500 hover:text-purple-400 rounded-lg transition-colors"
             title="查看 ER 图"
           >
-            ER图
+            <Network className="w-4 h-4" strokeWidth={2} />
           </button>
           <CreateTableModal />
         </div>
       </div>
       
+      {/* Table List */}
       <div className="flex-1 overflow-auto">
         {tables.length === 0 ? (
-          <p className="p-3 text-gray-500 text-sm">No tables found</p>
+          <div className="p-6 text-center">
+            <Table2 className="w-8 h-8 text-gray-700 mx-auto mb-2" strokeWidth={1.5} />
+            <p className="text-gray-600 text-sm">暂无数据表</p>
+          </div>
         ) : (
-          <div className="p-2">
-            {tables.map(table => (
-              <div key={table.name}>
-                <button
-                  onClick={() => selectTable(table.name)}
-                  onDoubleClick={() => handleDoubleClick(table.name)}
-                  onContextMenu={(e) => handleContextMenu(e, table.name)}
-                  className={`w-full text-left px-3 py-2 rounded flex items-center justify-between ${
-                    selectedTable === table.name 
-                      ? 'bg-blue-600 text-white' 
-                      : 'text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  <span className="font-mono text-sm">{table.name}</span>
-                  <span className="text-xs opacity-70">{table.rowCount} rows</span>
-                </button>
-                
-                {selectedTable === table.name && (
-                  <div className="ml-4 mt-2 space-y-4">
-                    {isLoading ? (
-                      <SchemaSkeleton />
+          <div className="p-2 space-y-1">
+            {tables.map(table => {
+              const isExpanded = expandedTables.has(table.name) || selectedTable === table.name;
+              const isSelected = selectedTable === table.name;
+              
+              return (
+                <div key={table.name}>
+                  {/* Table Row */}
+                  <button
+                    onClick={() => {
+                      selectTable(table.name);
+                      toggleExpand(table.name);
+                    }}
+                    onDoubleClick={() => handleDoubleClick(table.name)}
+                    onContextMenu={(e) => handleContextMenu(e, table.name)}
+                    className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center gap-2 transition-all group ${
+                      isSelected 
+                        ? 'bg-blue-500/20 border border-blue-500/30' 
+                        : 'hover:bg-gray-800/50 border border-transparent'
+                    }`}
+                  >
+                    <GripVertical className="w-3.5 h-3.5 text-gray-700 opacity-0 group-hover:opacity-100" strokeWidth={2} />
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2} />
                     ) : (
-                      <>
+                      <ChevronRight className="w-4 h-4 text-gray-600" strokeWidth={2} />
+                    )}
+                    <Table2 className={`w-4 h-4 ${isSelected ? 'text-blue-400' : 'text-gray-500'}`} strokeWidth={1.5} />
+                    <span className={`flex-1 font-mono text-sm truncate ${isSelected ? 'text-blue-300' : 'text-gray-400'}`}>
+                      {table.name}
+                    </span>
+                    <span className="text-xs text-gray-600 bg-gray-800/80 px-1.5 py-0.5 rounded">
+                      {table.rowCount}
+                    </span>
+                  </button>
+                  
+                  {/* Expanded Table Details */}
+                  {isSelected && (
+                    <div className="ml-6 mt-2 space-y-3 pl-3 border-l-2 border-gray-800">
+                      {isLoading ? (
+                        <SchemaSkeleton />
+                      ) : (
+                        <>
                     {/* Columns */}
                     <div>
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Columns</h4>
-                      <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Columns3 className="w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">字段</h4>
+                      </div>
+                      <div className="space-y-1.5">
                         {tableColumns.map(col => (
-                          <div key={col.name} className="flex items-center gap-2 text-sm">
-                            {col.pk && <span className="text-yellow-400" title="Primary Key">🔑</span>}
+                          <div key={col.name} className="flex items-center gap-2 text-sm group/col">
+                            {col.pk ? (
+                              <Key className="w-3.5 h-3.5 text-yellow-500/70" strokeWidth={2} />
+                            ) : (
+                              <div className="w-3.5"></div>
+                            )}
                             <span className="font-mono text-gray-300">{col.name}</span>
-                            <span className="text-gray-500">{col.type}</span>
-                            {col.notnull && <span className="text-red-400 text-xs">NOT NULL</span>}
+                            <span className="text-gray-600 text-xs">{col.type}</span>
+                            {col.notnull && (
+                              <span className="text-[10px] text-red-400/70 bg-red-400/10 px-1 rounded">NOT NULL</span>
+                            )}
                           </div>
                         ))}
                       </div>
                     </div>
                     
                     {/* Row Count */}
-                    <div>
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Rows</h4>
-                      <p className="text-gray-300">{tableRowCount.toLocaleString()}</p>
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+                      <span className="text-xs text-gray-500">共</span>
+                      <span className="text-sm text-gray-300 font-medium">{tableRowCount.toLocaleString()}</span>
+                      <span className="text-xs text-gray-500">条记录</span>
                     </div>
                     
                     {/* Indexes */}
                     {tableIndexes.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-xs font-semibold text-gray-500 uppercase">Indexes</h4>
+                          <div className="flex items-center gap-1.5">
+                            <Network className="w-3.5 h-3.5 text-gray-600" strokeWidth={2} />
+                            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">索引</h4>
+                          </div>
                           <button
                             onClick={() => setShowIndexModal(true)}
-                            className="text-xs text-blue-400 hover:text-blue-300"
+                            className="text-xs text-blue-400/70 hover:text-blue-400 flex items-center gap-0.5"
                           >
-                            + 新建
+                            <Plus className="w-3 h-3" />
+                            新建
                           </button>
                         </div>
                         <div className="space-y-1">
                           {tableIndexes.map(idx => (
-                            <div key={idx.name} className="flex items-center justify-between text-sm group">
-                              <div>
-                                <span className="font-mono text-gray-300">{idx.name}</span>
-                                {idx.unique && <span className="text-blue-400 text-xs ml-1">UNIQUE</span>}
-                                <span className="text-gray-500 text-xs ml-1">({idx.columns.join(', ')})</span>
+                            <div key={idx.name} className="flex items-center justify-between text-sm group/idx">
+                              <div className="flex items-center gap-2">
+                                <Hash className="w-3 h-3 text-gray-600" strokeWidth={2} />
+                                <span className="font-mono text-gray-400">{idx.name}</span>
+                                <span className="text-xs text-gray-600">
+                                  ({idx.columns.join(', ')})
+                                </span>
                               </div>
                               <button
                                 onClick={() => handleDeleteIndex(idx.name)}
-                                className="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-300 text-xs"
+                                className="opacity-0 group-hover/idx:opacity-100 text-red-400/70 hover:text-red-400 text-xs"
                               >
                                 删除
                               </button>
@@ -196,21 +254,21 @@ export function SchemaPanel() {
                     )}
                     
                     {tableIndexes.length === 0 && (
-                      <div>
-                        <button
-                          onClick={() => setShowIndexModal(true)}
-                          className="text-xs text-blue-400 hover:text-blue-300"
-                        >
-                          + 创建索引
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setShowIndexModal(true)}
+                        className="text-xs text-gray-600 hover:text-gray-400 flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        创建索引
+                      </button>
                     )}
                       </>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -221,12 +279,12 @@ export function SchemaPanel() {
 
       {contextMenu && (
         <div
-          className="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 min-w-[160px]"
+          className="fixed z-50 bg-gray-900/95 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-2xl py-1.5 min-w-[180px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           {contextMenu.items.map((item, index) =>
             item.divider ? (
-              <div key={index} className="my-1 border-t border-gray-700" />
+              <div key={index} className="my-1.5 border-t border-gray-800" />
             ) : (
               <button
                 key={index}
@@ -234,10 +292,10 @@ export function SchemaPanel() {
                   item.onClick();
                   hideContextMenu();
                 }}
-                className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2.5 transition-colors ${
                   item.danger
-                    ? 'text-red-400 hover:bg-red-900/30'
-                    : 'text-gray-300 hover:bg-gray-700'
+                    ? 'text-red-400 hover:bg-red-500/20'
+                    : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
                 {item.label}
