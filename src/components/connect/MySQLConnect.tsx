@@ -52,10 +52,10 @@ export function MySQLConnect() {
   };
 
   return (
-    <div className="p-3 bg-gray-800/30 rounded-xl border border-gray-800">
+    <div className="p-3 bg-[var(--bg-secondary)]/30 rounded-xl border border-gray-800">
       <div className="flex items-center gap-2 mb-3">
         <Server className="w-4 h-4 text-orange-400" strokeWidth={2} />
-        <span className="text-xs font-medium text-gray-400">快速连接</span>
+        <span className="text-xs font-medium text-[var(--text-muted)]">快速连接</span>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-2.5">
@@ -64,14 +64,14 @@ export function MySQLConnect() {
             type="text"
             value={form.host}
             onChange={(e) => setForm({ ...form, host: e.target.value })}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
             placeholder="主机"
           />
           <input
             type="number"
             value={form.port}
             onChange={(e) => setForm({ ...form, port: parseInt(e.target.value) })}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-blue-500/50"
+            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] focus:outline-none focus:border-blue-500/50"
             placeholder="端口"
           />
         </div>
@@ -81,14 +81,14 @@ export function MySQLConnect() {
             type="text"
             value={form.user}
             onChange={(e) => setForm({ ...form, user: e.target.value })}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
             placeholder="用户名"
           />
           <input
             type="password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-blue-500/50"
+            className="px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] focus:outline-none focus:border-blue-500/50"
             placeholder="密码"
           />
         </div>
@@ -97,7 +97,7 @@ export function MySQLConnect() {
           type="text"
           value={form.database}
           onChange={(e) => setForm({ ...form, database: e.target.value })}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+          className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
           placeholder="数据库名"
           required
         />
@@ -115,7 +115,7 @@ export function MySQLConnect() {
           {connecting ? '连接中...' : '连接'}
         </button>
 
-        <p className="text-[10px] text-gray-600 text-center">
+        <p className="text-[10px] text-[var(--text-muted)] text-center">
           需要先启动后端服务
         </p>
       </form>

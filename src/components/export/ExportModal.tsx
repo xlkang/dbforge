@@ -65,21 +65,21 @@ export function ExportModal({ onClose }: ExportModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-2xl w-[420px] border border-gray-800 shadow-2xl overflow-hidden">
+      <div className="bg-[var(--bg-primary)] rounded-2xl w-[420px] border border-gray-800 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-gray-900/50">
+        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-[var(--bg-primary)]/50">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
               <Download className="w-5 h-5 text-white" strokeWidth={2} />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">导出数据库</h3>
-              <p className="text-xs text-gray-500">备份您的数据</p>
+              <p className="text-xs text-[var(--text-muted)]">备份您的数据</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-gray-300 transition-colors"
+            className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
           >
             <X className="w-5 h-5" strokeWidth={2} />
           </button>
@@ -88,35 +88,35 @@ export function ExportModal({ onClose }: ExportModalProps) {
         {/* Content */}
         <div className="p-6 space-y-5">
           {/* Info Card */}
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-800">
+          <div className="bg-[var(--bg-secondary)]/50 rounded-xl p-4 border border-gray-800">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Database className="w-5 h-5 text-blue-400" strokeWidth={2} />
+              <div className="p-2 bg-[var(--accent)]/20 rounded-lg">
+                <Database className="w-5 h-5 text-[var(--accent)]" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-gray-200 font-medium">{connection?.name}</p>
-                <p className="text-xs text-gray-500">{connection?.type === 'mysql' ? 'MySQL' : 'SQLite'} 数据库</p>
+                <p className="text-[var(--text-primary)] font-medium">{connection?.name}</p>
+                <p className="text-xs text-[var(--text-muted)]">{connection?.type === 'mysql' ? 'MySQL' : 'SQLite'} 数据库</p>
               </div>
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-[var(--text-muted)]">
               将导出 <span className="text-white font-medium">{tables.length}</span> 个表
             </div>
           </div>
 
           {/* Export Format */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-400">导出格式</label>
+            <label className="text-sm font-medium text-[var(--text-muted)]">导出格式</label>
             <div className="grid grid-cols-2 gap-3">
               <div className={`p-4 rounded-xl border-2 transition-all ${
                 connection?.type === 'sqlite' 
-                  ? 'border-blue-500 bg-blue-500/10' 
-                  : 'border-gray-800 bg-gray-800/30'
+                  ? 'border-blue-500 bg-[var(--accent)]/10' 
+                  : 'border-gray-800 bg-[var(--bg-secondary)]/30'
               }`}>
-                <FileText className={`w-6 h-6 mb-2 ${connection?.type === 'sqlite' ? 'text-blue-400' : 'text-gray-600'}`} strokeWidth={1.5} />
-                <p className="text-sm font-medium text-gray-300">
+                <FileText className={`w-6 h-6 mb-2 ${connection?.type === 'sqlite' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} strokeWidth={1.5} />
+                <p className="text-sm font-medium text-[var(--text-secondary)]">
                   {connection?.type === 'sqlite' ? '.db 文件' : 'SQL 脚本'}
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-[var(--text-muted)] mt-1">
                   {connection?.type === 'sqlite' ? '完整数据库备份' : 'CREATE + INSERT 语句'}
                 </p>
               </div>
@@ -135,10 +135,10 @@ export function ExportModal({ onClose }: ExportModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-800 flex justify-end gap-3 bg-gray-900/50">
+        <div className="px-6 py-4 border-t border-gray-800 flex justify-end gap-3 bg-[var(--bg-primary)]/50">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
+            className="px-5 py-2.5 text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-secondary)] rounded-xl transition-colors"
           >
             取消
           </button>

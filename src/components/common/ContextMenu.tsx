@@ -58,12 +58,12 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 min-w-[160px]"
+      className="fixed z-50 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg shadow-xl py-1 min-w-[160px]"
       style={{ left: x, top: y }}
     >
       {items.map((item, index) =>
         item.divider ? (
-          <div key={index} className="my-1 border-t border-gray-700" />
+          <div key={index} className="my-1 border-t border-[var(--border-color)]" />
         ) : (
           <button
             key={index}
@@ -74,7 +74,7 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
             className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
               item.danger
                 ? 'text-red-400 hover:bg-red-900/30'
-                : 'text-gray-300 hover:bg-gray-700'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'
             }`}
           >
             {item.icon}

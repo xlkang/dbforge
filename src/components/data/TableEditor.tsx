@@ -29,16 +29,16 @@ export function TableEditor() {
   };
 
   return (
-    <div className="p-2 bg-gray-800 border-t border-gray-700">
+    <div className="p-2 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-[var(--text-muted)]">
           表数据编辑（点击单元格修改，仅支持有主键的表）
         </span>
         {editingCell && (
           <div className="flex gap-2">
             <button
               onClick={() => setEditingCell(null)}
-              className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded"
+              className="px-2 py-1 text-xs bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)] rounded"
             >
               取消
             </button>
@@ -54,12 +54,12 @@ export function TableEditor() {
       </div>
       
       {editingCell && (
-        <div className="mb-2 p-2 bg-gray-900 rounded">
+        <div className="mb-2 p-2 bg-[var(--bg-primary)] rounded">
           <input
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
-            className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+            className="w-full px-2 py-1 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm"
             placeholder="输入新值（空为 NULL）"
             autoFocus
           />

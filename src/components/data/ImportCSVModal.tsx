@@ -83,7 +83,7 @@ export function ImportCSVModal() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors flex items-center justify-center gap-2"
+        className="w-full px-3 py-2 text-sm bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded transition-colors flex items-center justify-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -93,32 +93,32 @@ export function ImportCSVModal() {
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg w-full max-w-lg">
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+          <div className="bg-[var(--bg-secondary)] rounded-lg w-full max-w-lg">
+            <div className="p-4 border-b border-[var(--border-color)] flex justify-between items-center">
               <h2 className="font-semibold">导入 CSV</h2>
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] hover:text-white">✕</button>
             </div>
             
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">选择 CSV 文件</label>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">选择 CSV 文件</label>
                 <input
                   ref={fileRef}
                   type="file"
                   accept=".csv"
                   onChange={handleFileSelect}
-                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-sm"
+                  className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-sm"
                 />
               </div>
 
               {headers.length > 0 && (
                 <>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">目标表</label>
+                    <label className="block text-sm text-[var(--text-muted)] mb-1">目标表</label>
                     <select
                       value={selectedTable}
                       onChange={(e) => setSelectedTable(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-sm"
+                      className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-sm"
                     >
                       <option value="">选择表...</option>
                       {tables.map(t => (
@@ -127,7 +127,7 @@ export function ImportCSVModal() {
                     </select>
                   </div>
 
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-[var(--text-muted)]">
                     <p>预览：{csvData.length} 行数据</p>
                     <p>字段：{headers.join(', ')}</p>
                   </div>
@@ -135,17 +135,17 @@ export function ImportCSVModal() {
               )}
             </div>
 
-            <div className="p-4 border-t border-gray-700 flex justify-end gap-2">
+            <div className="p-4 border-t border-[var(--border-color)] flex justify-end gap-2">
               <button
                 onClick={() => setIsOpen(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded"
+                className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)] rounded"
               >
                 取消
               </button>
               <button
                 onClick={handleImport}
                 disabled={importing || !selectedTable || csvData.length === 0}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-[var(--bg-tertiary)] rounded"
               >
                 {importing ? '导入中...' : '导入'}
               </button>

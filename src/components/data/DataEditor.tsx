@@ -185,7 +185,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="p-2 border-b border-gray-700 flex items-center gap-2 bg-gray-800">
+      <div className="p-2 border-b border-[var(--border-color)] flex items-center gap-2 bg-[var(--bg-secondary)]">
         <button
           onClick={handleAddRow}
           className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center gap-1"
@@ -196,7 +196,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
         <button
           onClick={handleDeleteSelected}
           disabled={selectedRows.size === 0 || isSaving}
-          className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded flex items-center gap-1"
+          className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 disabled:bg-[var(--bg-tertiary)] disabled:cursor-not-allowed text-white rounded flex items-center gap-1"
         >
           <span>🗑</span> 删除选中 ({selectedRows.size})
         </button>
@@ -208,14 +208,14 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
             <button
               onClick={handleDiscardChanges}
               disabled={isSaving}
-              className="px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded"
+              className="px-3 py-1.5 text-sm bg-[var(--bg-tertiary)] hover:bg-gray-500 text-white rounded"
             >
               放弃更改
             </button>
             <button
               onClick={handleSaveChanges}
               disabled={isSaving}
-              className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded flex items-center gap-1"
+              className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 disabled:bg-[var(--bg-tertiary)] text-white rounded flex items-center gap-1"
             >
               {isSaving ? '保存中...' : '💾 保存更改'}
             </button>
@@ -226,9 +226,9 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
       {/* Table with selection and inline editing */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-700 sticky top-0">
+          <thead className="bg-[var(--bg-tertiary)] sticky top-0">
             <tr>
-              <th className="px-2 py-2 text-center border-b border-gray-600 w-10">
+              <th className="px-2 py-2 text-center border-b border-[var(--border-color)] w-10">
                 <input
                   type="checkbox"
                   checked={selectedRows.size === rows.length && rows.length > 0}
@@ -236,11 +236,11 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
                   className="w-4 h-4"
                 />
               </th>
-              <th className="px-2 py-2 text-left text-gray-300 font-medium border-b border-gray-600 w-12">#</th>
+              <th className="px-2 py-2 text-left text-[var(--text-secondary)] font-medium border-b border-[var(--border-color)] w-12">#</th>
               {columns.map(col => (
                 <th 
                   key={col} 
-                  className="px-3 py-2 text-left text-gray-300 font-medium border-b border-gray-600 font-mono"
+                  className="px-3 py-2 text-left text-[var(--text-secondary)] font-medium border-b border-[var(--border-color)] font-mono"
                 >
                   {col}
                 </th>
@@ -252,7 +252,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
             {newRows.map((newRow, rowIndex) => (
               <tr 
                 key={`new-${rowIndex}`} 
-                className="hover:bg-green-900/20 border-b border-gray-700/50 bg-green-900/10"
+                className="hover:bg-green-900/20 border-b border-[var(--border-color)]/50 bg-green-900/10"
               >
                 <td className="px-2 py-1 text-center">
                   <button
@@ -284,7 +284,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
             {rows.map((row, rowIndex) => (
               <tr 
                 key={rowIndex} 
-                className={`hover:bg-gray-800 border-b border-gray-700/50 ${
+                className={`hover:bg-[var(--bg-secondary)] border-b border-[var(--border-color)]/50 ${
                   selectedRows.has(rowIndex) ? 'bg-blue-900/30' : ''
                 }`}
               >
@@ -296,7 +296,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
                     className="w-4 h-4"
                   />
                 </td>
-                <td className="px-2 py-1 text-gray-500 text-xs">{rowIndex + 1}</td>
+                <td className="px-2 py-1 text-[var(--text-muted)] text-xs">{rowIndex + 1}</td>
                 {columns.map(col => {
                   const key = `${rowIndex}-${col}`;
                   const isEditing = editingCell?.row === rowIndex && editingCell?.col === col;
@@ -305,7 +305,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
                   return (
                     <td 
                       key={col} 
-                      className="px-3 py-1 text-gray-300 font-mono max-w-xs truncate"
+                      className="px-3 py-1 text-[var(--text-secondary)] font-mono max-w-xs truncate"
                       onDoubleClick={() => handleCellDoubleClick(rowIndex, col)}
                     >
                       {isEditing ? (
@@ -319,7 +319,7 @@ export function DataEditor({ columns, rows, onSaveChanges, onRefresh }: DataEdit
                       ) : (
                         <span className={editedValues.has(key) ? 'text-yellow-400' : ''}>
                           {displayValue === null ? (
-                            <span className="text-gray-500 italic">NULL</span>
+                            <span className="text-[var(--text-muted)] italic">NULL</span>
                           ) : (
                             String(displayValue)
                           )}

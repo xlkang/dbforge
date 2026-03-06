@@ -15,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   return (
     <div 
-      className={`animate-pulse bg-gray-200 dark:bg-gray-700 ${className}`}
+      className={`animate-pulse bg-gray-200 dark:bg-[var(--bg-tertiary)] ${className}`}
       style={{ 
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
@@ -35,7 +35,7 @@ export const TableSkeleton: React.FC<{ rows?: number }> = ({ rows = 5 }) => {
       </div>
       <div className="space-y-2">
         {/* Header */}
-        <div className="flex gap-4 p-3 bg-gray-100 dark:bg-gray-800 rounded">
+        <div className="flex gap-4 p-3 bg-gray-100 dark:bg-[var(--bg-secondary)] rounded">
           <Skeleton width={100} />
           <Skeleton width={100} />
           <Skeleton width={80} />
