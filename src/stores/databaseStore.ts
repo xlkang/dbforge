@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { DatabaseConnection, TableInfo, ColumnInfo, IndexInfo, QueryResult } from '../types/database';
 import * as db from '../lib/database';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api';
 
 // 从 localStorage 恢复连接
 function loadPersistedConnection(): DatabaseConnection | null {
@@ -129,6 +129,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       tableColumns: [],
       tableIndexes: [],
       tableRowCount: 0,
+      isLoading: conn.type === 'mysql', // MySQL 需要加载
     });
     // 加载 MySQL 表
     if (conn.type === 'mysql') {
@@ -173,6 +174,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     const { connection } = get();
     if (!connection || connection.type !== 'mysql') return;
     
+    set({ isLoading: true, error: null });
+    
     try {
       const res = await fetch(`${API_BASE}/tables`, {
         method: 'POST',
@@ -186,6 +189,11 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         }),
       });
       const data = await res.json();
+      
+      if (!data.success) {
+        set({ error: data.message || '加载表失败', isLoading: false });
+        return;
+      }
       
       if (data.success) {
         const tables: TableInfo[] = await Promise.all(
@@ -211,10 +219,11 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           })
         );
         
-        set({ tables });
+        set({ tables, isLoading: false });
       }
     } catch (error) {
-      set({ error: '加载表失败' });
+      console.error('加载表失败:', error);
+      set({ error: '加载表失败: ' + (error as Error).message, isLoading: false });
     }
   },
   

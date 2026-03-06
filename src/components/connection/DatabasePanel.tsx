@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Database, Server, Upload, X, Trash2, Edit3, Plus, FileText, FolderOpen, Wifi } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { useConnectionStore } from '../../stores/connectionStore';
@@ -15,8 +15,15 @@ export function DatabasePanel() {
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [editingConnection, setEditingConnection] = useState<MySQLConnection | undefined>();
   
-  const { connection, isConnecting, error, openDatabase, closeDatabase, setConnection } = useDatabaseStore();
+  const { connection, isConnecting, error, openDatabase, closeDatabase, setConnection, isLoading } = useDatabaseStore();
   const { savedConnections, recentSQLiteFiles, removeConnection, addRecentSQLite } = useConnectionStore();
+
+  // 显示错误提示
+  useEffect(() => {
+    if (error) {
+      console.error('数据库错误:', error);
+    }
+  }, [error]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -268,9 +275,20 @@ export function DatabasePanel() {
             </div>
           )}
           
+          {/* 加载中状态 */}
+          {(isConnecting || isLoading) && (
+            <div className="flex items-center justify-center gap-2 py-4 text-[var(--text-muted)]">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-xs">
+                {isConnecting ? '正在连接...' : '正在加载表...'}
+              </span>
+            </div>
+          )}
+          
           {/* 新建连接按钮 */}
-          <button
-            onClick={() => {
+          {!isConnecting && !isLoading && (
+            <button
+              onClick={() => {
               setEditingConnection(undefined);
               setShowConnectionModal(true);
             }}
@@ -278,10 +296,11 @@ export function DatabasePanel() {
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
             新建 MySQL 连接
-          </button>
+            </button>
+          )}
           
           {/* MySQL 快速连接表单 */}
-          <MySQLConnect />
+          {!isConnecting && !isLoading && <MySQLConnect />}
         </div>
       )}
       

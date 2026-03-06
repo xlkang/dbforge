@@ -16,7 +16,8 @@ export function QuickStart({ onFileSelect }: QuickStartProps) {
 
   useEffect(() => {
     if (error) {
-      alert('连接失败: ' + error);
+      // 使用更友好的提示方式
+      console.error('连接错误:', error);
     }
   }, [error]);
 
