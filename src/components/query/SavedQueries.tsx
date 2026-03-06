@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Bookmark, Plus, Trash2, Play, X } from 'lucide-react';
+import { useDatabaseStore } from '../../stores/databaseStore';
 
 interface SavedQuery {
   id: string;
@@ -13,6 +15,7 @@ export function SavedQueries() {
   const [isOpen, setIsOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [currentSql, setCurrentSql] = useState('');
+  const setQuery = useDatabaseStore((s) => s.setQuery);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -43,78 +46,101 @@ export function SavedQueries() {
   };
 
   const loadQuery = (sql: string) => {
-    setCurrentSql(sql);
-    // 触发 store 更新
-    window.dispatchEvent(new CustomEvent('loadQuery', { detail: sql }));
+    setQuery(sql);
+    setIsOpen(false);
   };
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded"
+        className="p-2 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
         title="保存的查询"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-        </svg>
+        <Bookmark className="w-4 h-4" strokeWidth={2} />
       </button>
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 max-h-80 overflow-auto">
-            <div className="p-3 border-b border-gray-700">
-              <h3 className="font-semibold text-sm">保存的查询</h3>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between bg-gray-900/50">
+              <div className="flex items-center gap-2">
+                <Bookmark className="w-4 h-4 text-blue-400" strokeWidth={2} />
+                <h3 className="text-sm font-medium text-gray-300">保存的查询</h3>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 hover:bg-gray-800 rounded text-gray-600 hover:text-gray-400"
+              >
+                <X className="w-4 h-4" strokeWidth={2} />
+              </button>
             </div>
             
-            <div className="p-2 space-y-2">
+            {/* List */}
+            <div className="flex-1 overflow-auto p-2">
               {queries.length === 0 && (
-                <p className="text-xs text-gray-500 text-center py-4">暂无保存的查询</p>
+                <div className="text-center py-8">
+                  <Bookmark className="w-8 h-8 text-gray-800 mx-auto mb-2" strokeWidth={1.5} />
+                  <p className="text-xs text-gray-600">暂无保存的查询</p>
+                </div>
               )}
               
               {queries.map((q) => (
-                <div key={q.id} className="p-2 bg-gray-700/50 rounded group">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">{q.name}</span>
-                    <button
-                      onClick={() => deleteQuery(q.id)}
-                      className="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ✕
-                    </button>
+                <div key={q.id} className="p-3 bg-gray-800/30 hover:bg-gray-800/50 rounded-lg group mb-2 last:mb-0 transition-colors border border-transparent hover:border-gray-800">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-sm font-medium text-gray-300">{q.name}</span>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => loadQuery(q.sql)}
+                        className="p-1 hover:bg-blue-500/20 rounded text-gray-600 hover:text-blue-400"
+                        title="加载"
+                      >
+                        <Play className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                      <button
+                        onClick={() => deleteQuery(q.id)}
+                        className="p-1 hover:bg-red-500/20 rounded text-gray-600 hover:text-red-400"
+                        title="删除"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => loadQuery(q.sql)}
-                    className="w-full text-left text-xs text-gray-400 hover:text-blue-400 truncate font-mono"
+                    className="w-full text-left text-xs text-gray-500 hover:text-blue-400 font-mono truncate block bg-gray-800/50 px-2 py-1.5 rounded"
                   >
-                    {q.sql.slice(0, 50)}...
+                    {q.sql.slice(0, 60)}...
                   </button>
                 </div>
               ))}
             </div>
 
-            <div className="p-2 border-t border-gray-700 space-y-2">
+            {/* Save Form */}
+            <div className="p-3 border-t border-gray-800 bg-gray-900/50 space-y-2">
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="查询名称"
-                className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-sm"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
               />
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={currentSql}
                   onChange={(e) => setCurrentSql(e.target.value)}
-                  placeholder="SQL 语句"
-                  className="flex-1 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs font-mono"
+                  placeholder="SELECT * FROM ..."
+                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs font-mono text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
                 />
                 <button
                   onClick={saveQuery}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                  disabled={!newName.trim() || !currentSql.trim()}
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
                 >
-                  保存
+                  <Plus className="w-4 h-4" strokeWidth={2} />
                 </button>
               </div>
             </div>

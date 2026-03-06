@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X, Hash, Loader2, CheckSquare, Square } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
 interface IndexModalProps {
@@ -15,7 +16,6 @@ export function IndexModal({ tableName, onClose }: IndexModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Use columns from store (already filtered to selected table)
   const tableCols = tableColumns;
 
   const toggleColumn = (colName: string) => {
@@ -55,73 +55,112 @@ export function IndexModal({ tableName, onClose }: IndexModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-[480px] max-h-[80vh] overflow-auto">
-        <h2 className="text-lg font-semibold text-white mb-4">创建索引 - {tableName}</h2>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-gray-900 rounded-2xl w-[480px] max-h-[80vh] flex flex-col border border-gray-800 shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-gray-900/50 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+              <Hash className="w-5 h-5 text-white" strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">创建索引</h3>
+              <p className="text-xs text-gray-500">表: {tableName}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <X className="w-5 h-5" strokeWidth={2} />
+          </button>
+        </div>
         
-        <div className="space-y-4">
+        {/* Content */}
+        <div className="p-6 space-y-5 overflow-auto">
+          {/* Index Name */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">索引名</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">索引名称</label>
             <input
               type="text"
               value={indexName}
               onChange={(e) => setIndexName(e.target.value)}
               placeholder="idx_table_column"
-              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-              <input
-                type="checkbox"
-                checked={isUnique}
-                onChange={(e) => setIsUnique(e.target.checked)}
-                className="rounded"
-              />
+          {/* Unique Checkbox */}
+          <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl border border-gray-800">
+            <input
+              type="checkbox"
+              id="unique-index"
+              checked={isUnique}
+              onChange={(e) => setIsUnique(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-0 focus:ring-offset-0"
+            />
+            <label htmlFor="unique-index" className="text-sm text-gray-300 cursor-pointer">
               唯一索引 (UNIQUE)
             </label>
+            <span className="text-xs text-gray-600 ml-auto">不允许重复值</span>
           </div>
 
+          {/* Column Selection */}
           <div>
-            <label className="block text-sm text-gray-400 mb-2">选择列</label>
-            <div className="space-y-2 max-h-48 overflow-auto">
+            <label className="block text-sm font-medium text-gray-400 mb-2">选择列</label>
+            <div className="bg-gray-800/30 rounded-xl border border-gray-800 max-h-48 overflow-auto">
               {tableCols.map(col => (
-                <label
+                <button
                   key={col.name}
-                  className="flex items-center gap-2 text-gray-300 cursor-pointer hover:bg-gray-700 p-2 rounded"
+                  onClick={() => toggleColumn(col.name)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 last:border-0"
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedColumns.includes(col.name)}
-                    onChange={() => toggleColumn(col.name)}
-                    className="rounded"
-                  />
-                  <span className="font-mono">{col.name}</span>
-                  <span className="text-gray-500 text-sm">{col.type}</span>
-                </label>
+                  {selectedColumns.includes(col.name) ? (
+                    <CheckSquare className="w-4 h-4 text-blue-400 shrink-0" strokeWidth={2} />
+                  ) : (
+                    <Square className="w-4 h-4 text-gray-600 shrink-0" strokeWidth={2} />
+                  )}
+                  <span className="font-mono text-sm text-gray-300">{col.name}</span>
+                  <span className="text-xs text-gray-600 ml-auto">{col.type}</span>
+                </button>
               ))}
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              已选择 {selectedColumns.length} 个列
+            </p>
           </div>
 
+          {/* Error */}
           {error && (
-            <p className="text-red-400 text-sm">{error}</p>
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
           )}
+
+          {/* Preview */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">SQL 预览</label>
+            <pre className="p-4 bg-gray-950 rounded-xl text-xs font-mono text-gray-400 border border-gray-800">
+              {`CREATE ${isUnique ? 'UNIQUE ' : ''}INDEX \`${indexName || 'idx_name'}\` ON \`${tableName}\` (${selectedColumns.map(c => `\`${c}\``).join(', ') || 'column'});`}
+            </pre>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-800 flex justify-end gap-3 bg-gray-900/50 shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+            className="px-5 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
           >
             取消
           </button>
           <button
             onClick={handleCreate}
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-purple-500/20"
           >
-            {isLoading ? '创建中...' : '创建'}
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />}
+            {isLoading ? '创建中...' : '创建索引'}
           </button>
         </div>
       </div>
