@@ -4,11 +4,33 @@ import * as db from '../lib/database';
 
 const API_BASE = 'http://localhost:3001/api';
 
+// 从 localStorage 恢复连接
+function loadPersistedConnection(): DatabaseConnection | null {
+  try {
+    const saved = localStorage.getItem('dbforge-last-connection');
+    if (saved) {
+      const conn = JSON.parse(saved);
+      // 标记为需要重新验证
+      return { ...conn, isConnected: false };
+    }
+  } catch {}
+  return null;
+}
+
+// 保存连接到 localStorage
+function saveConnection(conn: DatabaseConnection | null) {
+  if (conn) {
+    localStorage.setItem('dbforge-last-connection', JSON.stringify(conn));
+  } else {
+    localStorage.removeItem('dbforge-last-connection');
+  }
+}
+
 interface DatabaseState {
   // Connection state
   connection: DatabaseConnection | null;
   isConnecting: boolean;
-  isLoading: boolean; // 新增：表结构加载状态
+  isLoading: boolean;
   error: string | null;
   
   // Schema state
@@ -41,11 +63,12 @@ interface DatabaseState {
   loadTables: () => Promise<void>;
   loadViews: () => Promise<void>;
   loadTriggers: () => Promise<void>;
+  reconnect: () => Promise<void>;
 }
 
 export const useDatabaseStore = create<DatabaseState>((set, get) => ({
-  // Initial state
-  connection: null,
+  // Initial state - 尝试恢复上次连接
+  connection: loadPersistedConnection(),
   isConnecting: false,
   isLoading: false,
   error: null,
@@ -74,14 +97,17 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         return { name, rowCount: info.rowCount };
       });
       
+      const connection: DatabaseConnection = {
+        id: crypto.randomUUID(),
+        type: 'sqlite',
+        name: file.name,
+        path: URL.createObjectURL(file),
+        isConnected: true,
+      };
+      
+      saveConnection(connection);
       set({
-        connection: {
-          id: crypto.randomUUID(),
-          type: 'sqlite',
-          name: file.name,
-          path: URL.createObjectURL(file),
-          isConnected: true,
-        },
+        connection,
         isConnecting: false,
         tables,
         error: null,
@@ -95,6 +121,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   },
   
   setConnection: (conn: DatabaseConnection) => {
+    saveConnection(conn);
     set({ 
       connection: conn, 
       tables: [],
@@ -106,6 +133,39 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     // 加载 MySQL 表
     if (conn.type === 'mysql') {
       get().loadTables();
+    }
+  },
+  
+  reconnect: async () => {
+    const { connection } = get();
+    if (!connection || connection.type !== 'mysql') return;
+    
+    set({ isConnecting: true, error: null });
+    
+    try {
+      const res = await fetch(`${API_BASE}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: connection.host,
+          port: connection.port,
+          user: connection.user,
+          password: connection.password,
+          database: connection.database,
+        }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        const connectedConn = { ...connection, isConnected: true };
+        saveConnection(connectedConn);
+        set({ connection: connectedConn, isConnecting: false });
+        get().loadTables();
+      } else {
+        set({ isConnecting: false, error: data.message });
+      }
+    } catch (error) {
+      set({ isConnecting: false, error: (error as Error).message });
     }
   },
   
@@ -128,7 +188,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const data = await res.json();
       
       if (data.success) {
-        // 获取每个表的行数
         const tables: TableInfo[] = await Promise.all(
           data.tables.map(async (t: any) => {
             const countRes = await fetch(`${API_BASE}/count`, {
@@ -178,7 +237,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const data = await res.json();
       
       if (data.success) {
-        // Views loaded - could be stored in state if needed
         console.log('Views:', data.views);
       }
     } catch (error) {
@@ -205,7 +263,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const data = await res.json();
       
       if (data.success) {
-        // Triggers loaded - could be stored in state if needed
         console.log('Triggers:', data.triggers);
       }
     } catch (error) {
@@ -217,6 +274,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     if (get().connection?.type === 'sqlite') {
       db.closeDatabase();
     }
+    saveConnection(null);
     set({
       connection: null,
       tables: [],
@@ -236,7 +294,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set({ selectedTable: tableName, query: `SELECT * FROM \`${tableName}\` LIMIT 100`, isLoading: true });
     
     if (connection?.type === 'mysql') {
-      // 加载 MySQL 表结构
       try {
         const res = await fetch(`${API_BASE}/schema`, {
           method: 'POST',
@@ -287,7 +344,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         set({ error: '加载表结构失败', isLoading: false });
       }
     } else {
-      // SQLite
       const info = db.getTableInfo(tableName);
       const indexes = db.getIndexes(tableName);
       set({
@@ -312,7 +368,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       let result: QueryResult;
       
       if (connection?.type === 'mysql') {
-        // MySQL 查询
         const res = await fetch(`${API_BASE}/query`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -342,7 +397,6 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           isSelect,
         };
       } else {
-        // SQLite 查询
         result = db.executeQuery(queryToExecute);
       }
       

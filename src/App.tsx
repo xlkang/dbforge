@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useDatabaseStore } from './stores/databaseStore';
 import { useTabStore } from './stores/tabStore';
 import { DatabasePanel } from './components/connection/DatabasePanel';
@@ -19,6 +20,14 @@ import { ErrorBoundary } from './components/common/Toast';
 function App() {
   const connection = useDatabaseStore((s) => s.connection);
   const { tabs } = useTabStore();
+  const loadTables = useDatabaseStore((s) => s.loadTables);
+  
+  // 自动重连：页面加载时如果存在连接，自动加载表结构
+  useEffect(() => {
+    if (connection?.isConnected && connection.type === 'mysql') {
+      loadTables();
+    }
+  }, []);
   
   const dbType = connection?.type || 'sqlite';
   const dbName = connection?.name || '';
