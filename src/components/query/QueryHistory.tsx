@@ -1,17 +1,26 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { History, ChevronDown, ChevronRight, Trash2, RotateCcw, Search } from 'lucide-react';
 import { useDatabaseStore } from '../../stores/databaseStore';
 
 export function QueryHistory() {
+  // ============ Hooks - 必须放在最前面 ============
   const { queryHistory, setQuery, clearHistory } = useDatabaseStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [search, setSearch] = useState('');
 
-  const filteredHistory = queryHistory.filter(q => 
-    q.toLowerCase().includes(search.toLowerCase())
+  // Computed values - 在条件返回之前
+  const filteredHistory = useMemo(() => 
+    queryHistory.filter(q => 
+      q.toLowerCase().includes(search.toLowerCase())
+    ), [queryHistory, search]
   );
 
-  if (queryHistory.length === 0) return null;
+  const isEmpty = !queryHistory || queryHistory.length === 0;
+
+  // 早期返回 - 但在所有 hooks 之后
+  if (isEmpty) {
+    return null;
+  }
 
   return (
     <div className="border-t border-gray-800 bg-[var(--bg-primary)]/50">

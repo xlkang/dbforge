@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
@@ -17,6 +17,7 @@ interface ChartPanelProps {
 }
 
 export function ChartPanel({ onClose, columns: propColumns, rows: propRows }: ChartPanelProps) {
+  // ============ Hooks - 必须放在最前面 ============
   const { queryResult } = useDatabaseStore();
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [xAxis, setXAxis] = useState<string>('');
@@ -26,19 +27,21 @@ export function ChartPanel({ onClose, columns: propColumns, rows: propRows }: Ch
   const columns = propColumns || queryResult?.columns || [];
   const dataRows = propRows || queryResult?.rows || [];
   
-  // 自动选择 x 和 y 轴
-  useMemo(() => {
+  // 早期返回判断 - 在 hooks 之后
+  const hasNoResult = !queryResult || !queryResult.isSelect || !queryResult.rows?.length;
+
+  // 自动选择 x 和 y 轴 - 使用 useEffect
+  useEffect(() => {
     if (columns.length > 0 && !xAxis) {
       setXAxis(columns[0]);
     }
     if (columns.length > 1 && !yAxis) {
-      // 尝试选择一个数值列
       const numericCol = columns.find(col => 
         dataRows?.some((row: any) => typeof row[col] === 'number')
       );
       setYAxis(numericCol || columns[1]);
     }
-  }, [columns]);
+  }, [columns, xAxis, yAxis, dataRows]);
 
   // 准备图表数据
   const chartData = useMemo(() => {
@@ -51,9 +54,10 @@ export function ChartPanel({ onClose, columns: propColumns, rows: propRows }: Ch
         columns.map(col => [col, row[col]])
       )
     }));
-  }, [queryResult, xAxis, yAxis, columns]);
+  }, [queryResult, xAxis, yAxis, columns, dataRows]);
 
-  if (!queryResult || !queryResult.isSelect || !queryResult.rows?.length) {
+  // 早期返回 - 在所有 hooks 之后
+  if (hasNoResult) {
     return (
       <div className="p-4 text-center text-[var(--text-muted)]">
         <p>暂无查询结果，请先执行 SELECT 查询</p>

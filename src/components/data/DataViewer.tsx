@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { ChartPanel } from './ChartPanel';
 import { Virtuoso } from 'react-virtuoso';
 import { Table2, BarChart3, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from 'lucide-react';
@@ -12,9 +12,12 @@ interface DataViewerProps {
 }
 
 export function DataViewer({ tableName }: DataViewerProps) {
+  // ============ 所有 Hooks 必须放在最前面 ============
   const storeTableName = useDatabaseStore((s) => s.selectedTable);
   const displayTable = tableName || storeTableName;
   const { queryResult, queryError, clearResult } = useDatabaseStore();
+  
+  // State hooks - 必须在任何 return 之前
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -24,7 +27,22 @@ export function DataViewer({ tableName }: DataViewerProps) {
   const [quickFilter, setQuickFilter] = useState<{ col: string; val: unknown } | null>(null);
   const [showChart, setShowChart] = useState(false);
 
-  if (!queryResult && !queryError) {
+  // ============ 计算和状态 - 在条件返回之后使用 ============
+  
+  // 重置页码
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [queryResult?.columns, queryResult?.rows]);
+
+  // 如果没有结果，显示空状态
+  const isEmpty = !queryResult && !queryError;
+  // 如果有错误，显示错误状态
+  const hasError = !!queryError;
+  // 如果没有查询结果（但可能是在加载中）
+  const hasNoResult = !queryResult;
+
+  // 早期返回 - 但在所有 hooks 之后
+  if (isEmpty) {
     return (
       <div className="flex-1 flex items-center justify-center bg-[var(--bg-primary)]/50">
         <div className="text-center">
@@ -35,7 +53,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
     );
   }
 
-  if (queryError) {
+  if (hasError) {
     return (
       <div className="p-4 bg-[var(--bg-primary)]">
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
@@ -56,10 +74,70 @@ export function DataViewer({ tableName }: DataViewerProps) {
     );
   }
 
-  if (!queryResult) return null;
+  if (hasNoResult) return null;
 
-  const { columns, rows, rowCount, affectedRows = 0, executionTime, isSelect } = queryResult;
+  // 解构查询结果
+  const { columns, rows, rowCount, affectedRows = 0, executionTime, isSelect } = queryResult!;
 
+  // 非 SELECT 查询结果
+  if (!isSelect) {
+    return (
+      <div className="p-6 bg-[var(--bg-primary)]">
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-green-400" strokeWidth={2} />
+            </div>
+            <div>
+              <h4 className="text-green-400 font-semibold text-lg">执行成功</h4>
+              <p className="text-[var(--text-muted)] text-sm">语句已成功执行</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-500/5 rounded-lg p-3">
+              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">受影响行数</p>
+              <p className="text-green-400 text-2xl font-bold">{affectedRows.toLocaleString()}</p>
+            </div>
+            <div className="bg-green-500/5 rounded-lg p-3">
+              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">执行时间</p>
+              <p className="text-green-400 text-2xl font-bold">{executionTime.toFixed(2)}ms</p>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={clearResult}
+          className="mt-4 flex items-center gap-2 px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-lg transition-colors border border-[(var(--border-color)]"
+        >
+          <X className="w-4 h-4" />
+          清除结果
+        </button>
+        {isSelect && columns.length > 0 && rows.length > 0 && (
+          <button
+            onClick={() => setShowChart(!showChart)}
+            className="mt-4 ml-2 flex items-center gap-2 px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-lg transition-colors border border-[var(--border-color)]"
+          >
+            <BarChart3 className="w-4 h-4" />
+            {showChart ? '隐藏图表' : '查看图表'}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // SELECT 查询 - 空结果检查
+  if (columns.length === 0) {
+    return (
+      <div className="p-6 bg-[var(--bg-primary)]">
+        <div className="text-[var(--text-muted)] text-center py-8">
+          <Table2 className="w-10 h-10 text-gray-700 mx-auto mb-2" strokeWidth={1.5} />
+          <p>查询返回空结果</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============ 数据处理 hooks - 在条件返回之后使用 ============
+  
   // Calculate column statistics
   const columnStats = useMemo(() => {
     const stats: Record<string, { unique: number; nulls: number; values: Map<unknown, number> }> = {};
@@ -80,14 +158,14 @@ export function DataViewer({ tableName }: DataViewerProps) {
   }, [columns, rows]);
 
   // Get top values for a column
-  const getTopValues = (col: string, limit = 5) => {
+  const getTopValues = useCallback((col: string, limit = 5) => {
     const stats = columnStats[col];
     if (!stats) return [];
     return [...stats.values.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([val, count]) => ({ val, count, percent: ((count / rows.length) * 100).toFixed(1) }));
-  };
+  }, [columnStats, rows.length]);
 
   // Apply quick filter
   let filteredRows = rows;
@@ -123,70 +201,8 @@ export function DataViewer({ tableName }: DataViewerProps) {
     });
   }
 
-  // Non-SELECT query result
-  if (!isSelect) {
-    return (
-      <div className="p-6 bg-[var(--bg-primary)]">
-        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-green-500/20 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-400" strokeWidth={2} />
-            </div>
-            <div>
-              <h4 className="text-green-400 font-semibold text-lg">执行成功</h4>
-              <p className="text-[var(--text-muted)] text-sm">语句已成功执行</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-500/5 rounded-lg p-3">
-              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">受影响行数</p>
-              <p className="text-green-400 text-2xl font-bold">{affectedRows.toLocaleString()}</p>
-            </div>
-            <div className="bg-green-500/5 rounded-lg p-3">
-              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">执行时间</p>
-              <p className="text-green-400 text-2xl font-bold">{executionTime.toFixed(2)}ms</p>
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={clearResult}
-          className="mt-4 flex items-center gap-2 px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-lg transition-colors border border-[var(--border-color)]"
-        >
-          <X className="w-4 h-4" />
-          清除结果
-        </button>
-        {isSelect && columns.length > 0 && rows.length > 0 && (
-          <button
-            onClick={() => setShowChart(!showChart)}
-            className="mt-4 ml-2 flex items-center gap-2 px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-lg transition-colors border border-[var(--border-color)]"
-          >
-            <BarChart3 className="w-4 h-4" />
-            {showChart ? '隐藏图表' : '查看图表'}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // SELECT query result
-  if (columns.length === 0) {
-    return (
-      <div className="p-6 bg-[var(--bg-primary)]">
-        <div className="text-[var(--text-muted)] text-center py-8">
-          <Table2 className="w-10 h-10 text-gray-700 mx-auto mb-2" strokeWidth={1.5} />
-          <p>查询返回空结果</p>
-        </div>
-      </div>
-    );
-  }
-
   // Use sorted/filtered rows for display
   const displayRows = sortColumn || filterText || quickFilter ? sortedRows : rows;
-  // Reset to page 1 when query changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [queryResult]);
-
   const totalPages = Math.ceil(displayRows.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedRows = displayRows.slice(startIndex, startIndex + pageSize);
@@ -202,9 +218,8 @@ export function DataViewer({ tableName }: DataViewerProps) {
     );
   };
 
-  // Export function for query results
-  const handleExport = (format: 'csv' | 'json') => {
-    const { columns, rows } = queryResult;
+  // Export function
+  const handleExport = useCallback((format: 'csv' | 'json') => {
     if (!columns.length || !rows.length) return;
 
     let content: string;
@@ -247,7 +262,23 @@ export function DataViewer({ tableName }: DataViewerProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [columns, rows, displayTable]);
+
+  // Sort handler
+  const handleSort = useCallback((col: string) => {
+    if (sortColumn === col) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortColumn(null);
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(col);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  }, [sortColumn, sortDirection]);
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-primary)]">
@@ -456,20 +487,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
                     <th 
                       key={col} 
                       className="px-3 py-2.5 text-left text-[var(--text-muted)] font-medium text-xs border-b border-[var(--border-color)] font-mono min-w-[120px] cursor-pointer hover:bg-[var(--bg-tertiary)]/50 transition-colors group"
-                      onClick={() => {
-                        if (sortColumn === col) {
-                          if (sortDirection === 'asc') {
-                            setSortDirection('desc');
-                          } else {
-                            setSortColumn(null);
-                            setSortDirection('asc');
-                          }
-                        } else {
-                          setSortColumn(col);
-                          setSortDirection('asc');
-                        }
-                        setCurrentPage(1);
-                      }}
+                      onClick={() => handleSort(col)}
                     >
                       <div className="flex items-center gap-1.5">
                         {col}
@@ -522,7 +540,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
         )}
       </div>
 
-      {/* Pagination - Hide when using Virtuoso */}
+      {/* Pagination */}
       {totalPages > 1 && displayRows.length <= 500 && (
         <div className="px-4 py-2 border-t border-gray-800 flex items-center justify-between bg-[var(--bg-primary)]/80 shrink-0">
           <div className="flex items-center gap-4">

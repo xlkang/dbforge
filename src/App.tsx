@@ -16,7 +16,6 @@ import { ShortcutsPanel } from './components/layout/ShortcutsPanel';
 import { TabBar } from './components/tabs/TabBar';
 import { TabContent } from './components/tabs/TabContent';
 import { ToastContainer } from './components/common/ToastContainer';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Toolbar } from './components/layout/Toolbar';
 import { DatabaseBackup } from './components/export/DatabaseBackup';
 import { CommandPalette } from './components/layout/CommandPalette';
@@ -100,7 +99,7 @@ function App() {
   };
 
   return (
-    <ErrorBoundary>
+    <>
       <div className="h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <ToastContainer />
         
@@ -195,7 +194,7 @@ function App() {
         {showBackup && <DatabaseBackup onClose={() => setShowBackup(false)} />}
         <GlobalSearch />
       </div>
-    </ErrorBoundary>
+    </>
   );
 }
 

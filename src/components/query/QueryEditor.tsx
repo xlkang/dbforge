@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Play, Code, Wand2, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, highlightSpecialChars } from '@codemirror/view';
@@ -35,52 +35,148 @@ const SQL_TEMPLATES = [
 ];
 
 export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
+  // ============ HOOKS - 必须放在最前面，顺序不能改变 ============
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  
+  // Local state hooks - 必须在任何条件渲染之前
   const [localQuery, setLocalQuery] = useState(initialSql || '');
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSearch, setTemplateSearch] = useState('');
   
+  // Store hooks - 必须始终调用
   const globalQuery = useDatabaseStore((s) => s.query);
   const globalSetQuery = useDatabaseStore((s) => s.setQuery);
-  const { executeQuery, connection, isExecuting, tableColumns, tables } = useDatabaseStore();
+  const executeQuery = useDatabaseStore((s) => s.executeQuery);
+  const connection = useDatabaseStore((s) => s.connection);
+  const isExecuting = useDatabaseStore((s) => s.isExecuting);
+  const tableColumns = useDatabaseStore((s) => s.tableColumns);
+  const tables = useDatabaseStore((s) => s.tables);
 
-  // Use local state for tabbed editors, global state for legacy
+  // Computed values - 必须在条件逻辑之前
   const query = tabId ? localQuery : (globalQuery || localQuery);
   const setQuery = tabId ? setLocalQuery : globalSetQuery;
-
-  const filteredTemplates = SQL_TEMPLATES.filter(t => 
-    t.label.toLowerCase().includes(templateSearch.toLowerCase()) ||
-    t.detail.toLowerCase().includes(templateSearch.toLowerCase())
+  
+  const filteredTemplates = useMemo(() => 
+    SQL_TEMPLATES.filter(t => 
+      t.label.toLowerCase().includes(templateSearch.toLowerCase()) ||
+      t.detail.toLowerCase().includes(templateSearch.toLowerCase())
+    ), [templateSearch]
   );
 
-  const insertTemplate = (sql: string) => {
+  // ============ CALLBACKS - 使用 useCallback 封装 ============
+  const insertTemplate = useCallback((sql: string) => {
     setQuery(sql);
     setShowTemplates(false);
     viewRef.current?.focus();
-  };
+  }, [setQuery]);
 
-  const handleFormat = () => {
+  const handleFormat = useCallback(() => {
     const formatted = formatSQL(query);
     setQuery(formatted);
-  };
+  }, [query, setQuery]);
 
-  const handleExecute = () => {
+  const handleExecute = useCallback(() => {
     if (!tabId) {
       globalSetQuery(query);
     }
     executeQuery(tabId ? localQuery : query);
-  };
+  }, [tabId, globalSetQuery, query, localQuery, executeQuery]);
 
-  // CodeMirror setup
+  const handleQueryChange = useCallback((newValue: string) => {
+    setQuery(newValue);
+  }, [setQuery]);
+
+  // ============ EFFECTS ============
   useEffect(() => {
     if (!editorRef.current) return;
+
+    // 如果已经有 view，先销毁
+    if (viewRef.current) {
+      viewRef.current.destroy();
+      viewRef.current = null;
+    }
 
     const dialect = connection?.type === 'mysql' ? MySQL : SQLite;
     const schema = tables.reduce((acc, t) => {
       acc[t.name] = tableColumns.map(c => c.name);
       return acc;
     }, {} as Record<string, string[]>);
+
+    // 创建 linter 函数
+    const sqlLinter = linter((view) => {
+      const diagnostics: Diagnostic[] = [];
+      const text = view.state.doc.toString();
+      
+      if (!text.trim()) return diagnostics;
+      
+      const lines = text.split('\n');
+      let parenCount = 0;
+      
+      lines.forEach((line, lineIndex) => {
+        for (const char of line) {
+          if (char === '(') parenCount++;
+          if (char === ')') parenCount--;
+        }
+        
+        const openParens = (line.match(/\(/g) || []).length;
+        const closeParens = (line.match(/\)/g) || []).length;
+        if (openParens !== closeParens) {
+          const from = view.state.doc.line(lineIndex + 1).from;
+          diagnostics.push({
+            from,
+            to: from + line.length,
+            severity: 'error',
+            message: `括号不匹配: ${openParens} 个开括号，${closeParens} 个闭括号`
+          });
+        }
+      });
+      
+      if (parenCount !== 0) {
+        diagnostics.push({
+          from: view.state.doc.length - 1,
+          to: view.state.doc.length,
+          severity: 'warning',
+          message: `有 ${Math.abs(parenCount)} 个括号未闭合`
+        });
+      }
+      
+      return diagnostics;
+    });
+
+    // 创建 autocomplete 函数
+    const completionOverride = (context: any) => {
+      const word = context.matchBefore(/\w*/);
+      if (!word || (word.from === word.to && !context.explicit)) return null;
+      return {
+        from: word.from,
+        options: Object.entries(schema).flatMap(([table, cols]) => [
+          { label: table, type: 'table', detail: '表' },
+          ...cols.map(col => ({ label: col, type: 'field', detail: table, apply: `\`${table}\`.\`${col}\`` }))
+        ])
+      };
+    };
+
+    // 创建 update listener
+    const updateListener = EditorView.updateListener.of((update) => {
+      if (update.docChanged) {
+        const newValue = update.state.doc.toString();
+        // 使用 ref 避免在 effect 中调用可能导致问题的 setState
+        handleQueryChange(newValue);
+      }
+    });
+
+    // 创建 keymap
+    const executeKeymap = keymap.of([
+      {
+        key: 'Ctrl-Enter',
+        run: () => { handleExecute(); return true; }
+      },
+      {
+        key: 'Shift-Ctrl-f',
+        run: () => { handleFormat(); return true; }
+      }
+    ]);
 
     const state = EditorState.create({
       doc: query,
@@ -89,83 +185,14 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
         highlightActiveLine(),
         highlightActiveLineGutter(),
         highlightSpecialChars(),
-        // SQL 语法检查器
-        linter((view) => {
-          const diagnostics: Diagnostic[] = [];
-          const text = view.state.doc.toString();
-          
-          // 检查括号匹配
-          const lines = text.split('\n');
-          let parenCount = 0;
-          let bracketCount = 0;
-          
-          lines.forEach((line, lineIndex) => {
-            for (const char of line) {
-              if (char === '(') parenCount++;
-              if (char === ')') parenCount--;
-              if (char === '[') bracketCount++;
-              if (char === ']') bracketCount--;
-            }
-            
-            // 检查不匹配的括号 (单行)
-            const openParens = (line.match(/\(/g) || []).length;
-            const closeParens = (line.match(/\)/g) || []).length;
-            if (openParens !== closeParens) {
-              const from = view.state.doc.line(lineIndex + 1).from;
-              diagnostics.push({
-                from,
-                to: from + line.length,
-                severity: 'error',
-                message: `括号不匹配: ${openParens} 个开括号，${closeParens} 个闭括号`
-              });
-            }
-          });
-          
-          // 检查未闭合的括号 (全局)
-          if (parenCount !== 0) {
-            diagnostics.push({
-              from: view.state.doc.length - 1,
-              to: view.state.doc.length,
-              severity: 'warning',
-              message: `有 ${Math.abs(parenCount)} 个括号未闭合`
-            });
-          }
-          
-          return diagnostics;
-        }),
+        sqlLinter,
         autocompletion({
-          override: [
-            (context) => {
-              const word = context.matchBefore(/\w*/);
-              if (!word || (word.from === word.to && !context.explicit)) return null;
-              return {
-                from: word.from,
-                options: Object.entries(schema).flatMap(([table, cols]) => [
-                  { label: table, type: 'table', detail: '表' },
-                  ...cols.map(col => ({ label: col, type: 'field', detail: table, apply: `\`${table}\`.\`${col}\`` }))
-                ])
-              };
-            }
-          ]
+          override: [completionOverride]
         }),
         sql({ dialect, schema }),
         oneDark,
-        keymap.of([
-          {
-            key: 'Ctrl-Enter',
-            run: () => { handleExecute(); return true; }
-          },
-          {
-            key: 'Shift-Ctrl-f',
-            run: () => { handleFormat(); return true; }
-          }
-        ]),
-        EditorView.updateListener.of((update) => {
-          if (update.docChanged) {
-            const newValue = update.state.doc.toString();
-            setQuery(newValue);
-          }
-        })
+        executeKeymap,
+        updateListener
       ]
     });
 
@@ -178,9 +205,11 @@ export function QueryEditor({ initialSql, tabId }: QueryEditorProps) {
 
     return () => {
       view.destroy();
+      viewRef.current = null;
     };
-  }, [connection?.type]);
+  }, [connection?.type, tables, tableColumns, handleQueryChange, handleExecute, handleFormat, query]);
 
+  // ============ RENDER ============
   return (
     <div className="flex flex-col h-full bg-[var(--bg-primary)]">
       {/* Header */}
