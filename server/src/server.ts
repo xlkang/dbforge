@@ -26,6 +26,34 @@ async function initSQL() {
 // API 路由
 app.use('/api', apiRoutes);
 
+// ==================== 错误处理中间件 ====================
+
+// 404 处理
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'API 端点不存在' });
+});
+
+// 全局错误处理
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('API Error:', err);
+  
+  // Multer 上传错误
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ success: false, message: `上传错误: ${err.message}` });
+  }
+  
+  // JSON 解析错误
+  if (err instanceof SyntaxError) {
+    return res.status(400).json({ success: false, message: 'JSON 解析错误' });
+  }
+  
+  // 默认错误
+  res.status(500).json({ 
+    success: false, 
+    message: err.message || '服务器内部错误' 
+  });
+});
+
 // ==================== SQLite 相关 ====================
 
 // POST /api/sqlite/open - 打开 SQLite 文件
