@@ -23,6 +23,8 @@ import { CommandPalette } from './components/layout/CommandPalette';
 import { GlobalSearch } from './components/layout/GlobalSearch';
 import { ConnectionStatus } from './components/layout/ConnectionStatus';
 
+// 懒加载大型组件 - 代码分割优化（仅在 TabContent 中使用）
+
 function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
