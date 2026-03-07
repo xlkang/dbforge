@@ -346,7 +346,7 @@ test.describe('DBForge QuickStart Tests', () => {
       
       // 检查模态框是否打开（查找连接相关的表单元素）
       const modal = page.locator('[class*="modal"], [role="dialog"]');
-      const isModalVisible = await modal.first().isVisible().catch(() => false);
+      await modal.first().isVisible().catch(() => false);
       // 模态框可能可见也可能不可见，取决于实现
       expect(true).toBeTruthy();
     }
