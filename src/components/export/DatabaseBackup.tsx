@@ -33,21 +33,56 @@ export function DatabaseBackup({ onClose }: DatabaseBackupProps) {
   };
 
   const handleBackup = async () => {
-    if (!connection?.path && connection?.type !== 'sqlite') {
-      addToast('仅 SQLite 数据库支持备份', 'error');
-      return;
-    }
-
     setIsBackingUp(true);
     try {
-      const response = await fetch('/api/backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          connection,
-          tables: selectedTables.size > 0 ? Array.from(selectedTables) : undefined,
-        }),
-      });
+      let response;
+      let filename;
+      
+      if (connection?.type === 'mysql') {
+        // MySQL backup
+        response = await fetch('/api/mysql/backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            host: connection.host,
+            port: connection.port,
+            user: connection.user,
+            password: connection.password,
+            database: connection.database,
+            tables: selectedTables.size > 0 ? Array.from(selectedTables) : undefined,
+          }),
+        });
+        filename = `${connection.database}-backup.sql`;
+      } else if (connection?.type === 'postgresql') {
+        // PostgreSQL backup
+        response = await fetch('/api/pg/backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            host: connection.host,
+            port: connection.port,
+            user: connection.user,
+            password: connection.password,
+            database: connection.database,
+            tables: selectedTables.size > 0 ? Array.from(selectedTables) : undefined,
+          }),
+        });
+        filename = `${connection.database}-backup.sql`;
+      } else if (connection?.type === 'sqlite') {
+        // SQLite backup
+        response = await fetch('/api/backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            connection,
+            tables: selectedTables.size > 0 ? Array.from(selectedTables) : undefined,
+          }),
+        });
+        filename = `dbforge-backup-${new Date().toISOString().slice(0, 10)}.sqlite`;
+      } else {
+        addToast('不支持的数据库类型', 'error');
+        return;
+      }
 
       if (!response.ok) throw new Error('Backup failed');
 
@@ -55,7 +90,7 @@ export function DatabaseBackup({ onClose }: DatabaseBackupProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `dbforge-backup-${new Date().toISOString().slice(0, 10)}.sqlite`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
       
@@ -121,7 +156,7 @@ export function DatabaseBackup({ onClose }: DatabaseBackupProps) {
               <Download className="w-4 h-4" />
               备份数据库
             </h3>
-            {connection?.type === 'sqlite' ? (
+            {connection?.type ? (
               <div className="space-y-2">
                 <p className="text-sm text-[var(--text-muted)]">
                   选择要备份的表（留空则备份整个数据库）

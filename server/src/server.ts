@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import mysql from 'mysql2/promise';
 import pg from 'pg';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const { Pool } = pg;
 
@@ -464,6 +467,108 @@ app.post('/api/restore', upload.single('file'), async (req, res) => {
     tempDb.close();
     
     res.json({ success: true, message: 'Database verified successfully', tempPath });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// MySQL Backup API - Export MySQL database
+app.post('/api/mysql/backup', async (req, res) => {
+  try {
+    const { connectionId, database, tables } = req.body;
+    
+    // Get connection config from request body
+    const { host, port, user, password } = req.body;
+    const pool = mysql.createPool({ host, port: port || 3306, user, password, database });
+    
+    let tableList = tables;
+    if (!tableList || tableList.length === 0) {
+      const [tableRows] = await pool.query('SHOW TABLES') as [any[], any];
+      tableList = tableRows.map((t: any) => t[`Tables_in_${database}`]);
+    }
+    
+    let sqlDump = '';
+    sqlDump += `-- DBForge MySQL Backup\n`;
+    sqlDump += `-- Database: ${database}\n`;
+    sqlDump += `-- Generated: ${new Date().toISOString()}\n\n`;
+    sqlDump += `SET FOREIGN_KEY_CHECKS=0;\n\n`;
+    
+    for (const tableName of tableList) {
+      // Get CREATE TABLE statement
+      const [createResult] = await pool.query('SHOW CREATE TABLE `' + tableName + '`') as [any[], any];
+      if (createResult[0]) {
+        sqlDump += 'DROP TABLE IF EXISTS `' + tableName + '`;\n';
+        sqlDump += createResult[0]['Create Table'] + ';\n\n';
+      }
+      
+      // Get data
+      const [dataResult] = await pool.query('SELECT * FROM `' + tableName + '`') as [any[], any];
+      const dataList = dataResult;
+      for (const row of dataList) {
+        const values = Object.values(row).map((v: any) => {
+          if (v === null) return 'NULL';
+          if (typeof v === 'string') return "'" + v.replace(/'/g, "''") + "'";
+          if (Buffer.isBuffer(v)) return "X'" + v.toString('hex') + "'";
+          return String(v);
+        });
+        sqlDump += 'INSERT INTO `' + tableName + '` VALUES (' + values.join(', ') + ');\n';
+      }
+      sqlDump += '\n';
+    }
+    
+    sqlDump += 'SET FOREIGN_KEY_CHECKS=1;\n';
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + database + '-backup.sql"');
+    res.send(sqlDump);
+    await pool.end();
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PostgreSQL Backup API - Export PostgreSQL database
+app.post('/api/pg/backup', async (req, res) => {
+  try {
+    const { database, tables, host, port, user, password } = req.body;
+    
+    const pool = new pg.Pool({ host: host || 'localhost', port: port || 5432, user, password, database });
+    
+    let tableList = tables;
+    if (!tableList || tableList.length === 0) {
+      const result = await pool.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+      tableList = result.rows.map((r: any) => r.tablename);
+    }
+    
+    let sqlDump = '';
+    sqlDump += `-- DBForge PostgreSQL Backup\n`;
+    sqlDump += `-- Database: ${database}\n`;
+    sqlDump += `-- Generated: ${new Date().toISOString()}\n\n`;
+    
+    for (const tableName of tableList) {
+      // Get CREATE statement
+      const createResult = await pool.query(`SELECT pg_get_tabledef($1)`, [tableName]);
+      if (createResult.rows[0]?.pg_get_tabledef) {
+        sqlDump += `DROP TABLE IF EXISTS "${tableName}" CASCADE;\n`;
+        sqlDump += createResult.rows[0].pg_get_tabledef + ';\n\n';
+      }
+      
+      // Get data
+      const dataResult = await pool.query(`SELECT * FROM "${tableName}"`);
+      for (const row of dataResult.rows) {
+        const values = Object.values(row).map((v: any) => {
+          if (v === null) return 'NULL';
+          if (typeof v === 'string') return "'" + v.replace(/'/g, "''") + "'";
+          return String(v);
+        });
+        sqlDump += `INSERT INTO "${tableName}" VALUES (` + values.join(', ') + ');\n';
+      }
+      sqlDump += '\n';
+    }
+    
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + database + '-backup.sql"');
+    res.send(sqlDump);
+    await pool.end();
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
