@@ -8,7 +8,7 @@ let db: Database | null = null;
 export async function initSQL(): Promise<SqlJsStatic> {
   if (!SQL) {
     SQL = await initSqlJs({
-      locateFile: (file: string) => `https://sql.js.org/dist/${file}`,
+      locateFile: (file: string) => `/node_modules/sql.js/dist/${file}`,
     });
   }
   return SQL;

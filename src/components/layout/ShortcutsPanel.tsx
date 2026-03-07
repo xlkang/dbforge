@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const SHORTCUTS = [
   { key: 'Ctrl + Enter', desc: '执行查询', category: '查询' },
@@ -24,10 +24,24 @@ export function ShortcutsPanel() {
     return acc;
   }, {} as Record<string, typeof SHORTCUTS>);
 
+  // ESC 键关闭面板
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
+  const toggle = () => setIsOpen(!isOpen);
+
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggle}
         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded"
         title="快捷键"
       >

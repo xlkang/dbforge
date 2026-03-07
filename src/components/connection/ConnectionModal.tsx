@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Server, Loader2, Eye, EyeOff, Database, Terminal, Key, Lock } from 'lucide-react';
 import { useConnectionStore, type MySQLConnection } from '../../stores/connectionStore';
 import { useDatabaseStore } from '../../stores/databaseStore';
@@ -36,6 +36,17 @@ export function ConnectionModal({ isOpen, onClose, editConnection }: ConnectionM
     username: '',
     authType: 'password',
   });
+
+  // ESC 键关闭模态框
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   // Update form port when dbType changes
   useState(() => {
