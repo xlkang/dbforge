@@ -181,6 +181,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           user: connection.user,
           password: connection.password,
           database: connection.database,
+          ssh: connection.ssh,
         }),
       });
       const data = await res.json();
@@ -214,6 +215,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           user: connection.user,
           password: connection.password,
           database: connection.database,
+          ssh: connection.ssh,
         }),
       });
       const data = await res.json();
@@ -236,6 +238,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
                 password: connection.password,
                 database: connection.database,
                 table: t.TABLE_NAME,
+                ssh: connection.ssh,
               }),
             });
             const countData = await countRes.json();
@@ -269,6 +272,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           user: connection.user,
           password: connection.password,
           database: connection.database,
+          ssh: connection.ssh,
         }),
       });
       const data = await res.json();
@@ -295,6 +299,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           user: connection.user,
           password: connection.password,
           database: connection.database,
+          ssh: connection.ssh,
         }),
       });
       const data = await res.json();
@@ -344,6 +349,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
             password: connection.password,
             database: connection.database,
             table: tableName,
+            ssh: connection.ssh,
           }),
         });
         const data = await res.json();
@@ -423,6 +429,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
             password: connection.password,
             database: connection.database,
             sql: queryToExecute,
+            ssh: connection.ssh,
           }),
         });
         const data = await res.json();
@@ -483,6 +490,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
             password: connection.password,
             database: connection.database,
             sql,
+            ssh: connection.ssh,
           }),
         });
         const data = await res.json();

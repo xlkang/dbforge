@@ -22,6 +22,7 @@ export function DataViewer({ tableName }: DataViewerProps) {
   const [filterText, setFilterText] = useState('');
   const [showStats, setShowStats] = useState(false);
   const [quickFilter, setQuickFilter] = useState<{ col: string; val: unknown } | null>(null);
+  const [showChart, setShowChart] = useState(false);
 
   if (!queryResult && !queryError) {
     return (
@@ -54,8 +55,6 @@ export function DataViewer({ tableName }: DataViewerProps) {
       </div>
     );
   }
-
-  const [showChart, setShowChart] = useState(false);
 
   if (!queryResult) return null;
 

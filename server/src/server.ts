@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import mysql from 'mysql2/promise';
 import pg from 'pg';
+import { Client as SSHClient } from 'ssh2';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -14,9 +15,85 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// SSH隧道连接缓存
+const sshTunnels = new Map<string, SSHClient>();
+
 // 连接池缓存
 const mysqlPools = new Map();
 const pgPools = new Map();
+
+// SSH配置接口
+interface SSHConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username: string;
+  password?: string;
+  privateKey?: string;
+  passphrase?: string;
+}
+
+// 创建SSH隧道
+async function createSSHTunnel(sshConfig: SSHConfig, targetHost: string, targetPort: number): Promise<{ localPort: number; client: SSHClient }> {
+  return new Promise((resolve, reject) => {
+    const tunnelKey = `${sshConfig.host}:${sshConfig.port}:${targetHost}:${targetPort}`;
+    
+    // 如果已有隧道，复用
+    if (sshTunnels.has(tunnelKey)) {
+      const existingClient = sshTunnels.get(tunnelKey)!;
+      // 简单检查连接状态
+      if (existingClient.shell) {
+        resolve({ localPort: targetPort + 10000, client: existingClient });
+        return;
+      }
+    }
+
+    const client = new SSHClient();
+    
+    client.on('ready', () => {
+      // 分配本地端口
+      const localPort = targetPort + 10000;
+      
+      client.forwardOut(
+        '127.0.0.1',
+        localPort,
+        targetHost,
+        targetPort,
+        (err, stream) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          sshTunnels.set(tunnelKey, client);
+          resolve({ localPort, client });
+        }
+      );
+    });
+
+    client.on('error', (err) => {
+      console.error('SSH Connection Error:', err);
+      reject(err);
+    });
+
+    const connectConfig: any = {
+      host: sshConfig.host,
+      port: sshConfig.port || 22,
+      username: sshConfig.username,
+      readyTimeout: 10000,
+    };
+
+    if (sshConfig.privateKey) {
+      connectConfig.privateKey = sshConfig.privateKey;
+      if (sshConfig.passphrase) {
+        connectConfig.passphrase = sshConfig.passphrase;
+      }
+    } else if (sshConfig.password) {
+      connectConfig.password = sshConfig.password;
+    }
+
+    client.connect(connectConfig);
+  });
+}
 
 // 创建MySQL连接池
 interface MysqlConfig {
@@ -74,18 +151,55 @@ function getPgPool(config: PgConfig) {
 // 测试连接
 app.post('/api/connect', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    // 如果启用SSH隧道
+    if (ssh?.enabled) {
+      try {
+        const tunnel = await createSSHTunnel(ssh, host, port);
+        finalHost = '127.0.0.1';
+        finalPort = tunnel.localPort;
+      } catch (sshError: any) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `SSH连接失败: ${sshError.message}` 
+        });
+      }
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ 
+        host: finalHost, 
+        port: finalPort, 
+        user, 
+        password, 
+        database 
+      });
       const connection = await pool.getConnection();
       connection.release();
-      res.json({ success: true, message: 'MySQL连接成功' });
+      res.json({ success: true, message: 'MySQL连接成功', sshTunneled: !!ssh?.enabled });
     } else if (dbType === 'postgresql') {
-      const pool = getPgPool({ host, port, user, password, database });
+      const pool = getPgPool({ 
+        host: finalHost, 
+        port: finalPort, 
+        user, 
+        password, 
+        database 
+      });
       const client = await pool.connect();
       client.release();
-      res.json({ success: true, message: 'PostgreSQL连接成功' });
+      res.json({ success: true, message: 'PostgreSQL连接成功', sshTunneled: !!ssh?.enabled });
     } else {
       res.status(400).json({ success: false, message: '不支持的数据库类型' });
     }
@@ -97,10 +211,27 @@ app.post('/api/connect', async (req, res) => {
 // 获取所有表
 app.post('/api/tables', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       const [tables] = await pool.query(`
         SELECT TABLE_NAME, TABLE_COMMENT
         FROM INFORMATION_SCHEMA.TABLES
@@ -108,7 +239,7 @@ app.post('/api/tables', async (req, res) => {
       `, [database]);
       res.json({ success: true, tables });
     } else if (dbType === 'postgresql') {
-      const pool = getPgPool({ host, port, user, password, database });
+      const pool = getPgPool({ host: finalHost, port: finalPort, user, password, database });
       const result = await pool.query(`
         SELECT table_name as TABLE_NAME, obj_description(relname::regclass, 'pg_class') as TABLE_COMMENT
         FROM information_schema.tables
@@ -126,10 +257,28 @@ app.post('/api/tables', async (req, res) => {
 // 获取表结构
 app.post('/api/schema', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database, table } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database, 
+      table,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       
       const [columns] = await pool.query(`
         SELECT 
@@ -183,10 +332,28 @@ app.post('/api/schema', async (req, res) => {
 // 执行查询
 app.post('/api/query', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database, sql } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database, 
+      sql,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       const [rows, fields] = await pool.query(sql);
       res.json({ 
         success: true, 
@@ -194,7 +361,7 @@ app.post('/api/query', async (req, res) => {
         fields: fields || []
       });
     } else if (dbType === 'postgresql') {
-      const pool = getPgPool({ host, port, user, password, database });
+      const pool = getPgPool({ host: finalHost, port: finalPort, user, password, database });
       const result = await pool.query(sql);
       res.json({ 
         success: true, 
@@ -212,14 +379,32 @@ app.post('/api/query', async (req, res) => {
 // 获取行数
 app.post('/api/count', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database, table } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database, 
+      table,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       const [[{ count }]] = await pool.query(`SELECT COUNT(*) as count FROM \`${table}\``);
       res.json({ success: true, count });
     } else if (dbType === 'postgresql') {
-      const pool = getPgPool({ host, port, user, password, database });
+      const pool = getPgPool({ host: finalHost, port: finalPort, user, password, database });
       const result = await pool.query(`SELECT COUNT(*) as count FROM "${table}"`);
       res.json({ success: true, count: parseInt(result.rows[0].count) });
     } else {
@@ -233,10 +418,27 @@ app.post('/api/count', async (req, res) => {
 // 获取所有视图
 app.post('/api/views', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       const [views] = await pool.query(`
         SELECT TABLE_NAME as name, VIEW_DEFINITION as definition
         FROM INFORMATION_SCHEMA.VIEWS
@@ -244,7 +446,7 @@ app.post('/api/views', async (req, res) => {
       `, [database]);
       res.json({ success: true, views });
     } else if (dbType === 'postgresql') {
-      const pool = getPgPool({ host, port, user, password, database });
+      const pool = getPgPool({ host: finalHost, port: finalPort, user, password, database });
       const result = await pool.query(`
         SELECT table_name as name, pg_get_viewdef(table_name, true) as definition
         FROM information_schema.views
@@ -262,10 +464,27 @@ app.post('/api/views', async (req, res) => {
 // 获取所有触发器
 app.post('/api/triggers', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       const [triggers] = await pool.query(`
         SELECT TRIGGER_NAME as name, EVENT_MANIPULATION as event,
           EVENT_OBJECT_TABLE as table_name, ACTION_TIMING as timing,
@@ -275,7 +494,7 @@ app.post('/api/triggers', async (req, res) => {
       `, [database]);
       res.json({ success: true, triggers });
     } else if (dbType === 'postgresql') {
-      const pool = getPgPool({ host, port, user, password, database });
+      const pool = getPgPool({ host: finalHost, port: finalPort, user, password, database });
       const result = await pool.query(`
         SELECT trigger_name as name, event_manipulation as event,
           event_object_table as table_name, action_timing as timing,
@@ -295,10 +514,27 @@ app.post('/api/triggers', async (req, res) => {
 // 导出数据库
 app.post('/api/export', async (req, res) => {
   try {
-    const { dbType = 'mysql', host, port, user, password, database } = req.body;
+    const { 
+      dbType = 'mysql', 
+      host, 
+      port, 
+      user, 
+      password, 
+      database,
+      ssh 
+    } = req.body;
+    
+    let finalHost = host;
+    let finalPort = port;
+    
+    if (ssh?.enabled) {
+      const tunnel = await createSSHTunnel(ssh, host, port);
+      finalHost = '127.0.0.1';
+      finalPort = tunnel.localPort;
+    }
     
     if (dbType === 'mysql') {
-      const pool = await getMysqlPool({ host, port, user, password, database });
+      const pool = await getMysqlPool({ host: finalHost, port: finalPort, user, password, database });
       let sqlDump = '';
       
       sqlDump += `-- DBForge MySQL Dump\n`;
