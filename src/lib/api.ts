@@ -3,9 +3,6 @@ import type { DatabaseConnection, QueryResult, TableInfo, ColumnInfo, IndexInfo 
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 30000;
 
-// 请求计数器（用于调试）
-let requestId = 0;
-
 /**
  * 统一错误处理
  */
@@ -31,9 +28,6 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
-  const currentId = ++requestId;
-  
-  console.log(`[API ${currentId}] ${options.method || 'GET'} ${url}`);
   
   try {
     const response = await fetch(url, {
@@ -43,7 +37,7 @@ async function fetchWithTimeout(
     clearTimeout(id);
     
     if (!response.ok) {
-      console.error(`[API ${currentId}] HTTP ${response.status}: ${response.statusText}`);
+      console.error(`[API] HTTP ${response.status}: ${response.statusText}`);
     }
     
     return response;
